@@ -1,5 +1,5 @@
 *.docx
-*.tex
+
 *.aux
 *.log
 *.out
