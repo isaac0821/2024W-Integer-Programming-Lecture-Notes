@@ -1,0 +1,98 @@
+\include{labTemplate}
+\usepackage{makecell}
+\usepackage{forest}
+\setlength{\parindent}{0pt}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+
+\renewcommand{\docTitle}{Example - Branch and Bound}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+    \titleSec
+
+    Solve the following knapsack problem via branch-and-bound.
+
+    \begin{align*}
+        \max \quad &10 x_1 + 12 x_2 + 7 x_3 + \frac{3}{2} x_4\\
+        \text{s.t.} \quad & 4 x_1 + 5 x_2 + 3 x_3 + x_4 \ge 10\\
+        & x_1, x_2 \in \mathbb{Z}_+\\
+        & x_3, x_4 \in \{0, 1\}
+    \end{align*}
+
+    The branch and bound tree is as following:
+    \begin{figure}[!htp]
+        \centering
+        \begin{forest}
+            for tree={
+                draw,
+                minimum width=1.5em,
+                l sep+=1.8em,
+                s sep+=2.2em,
+                anchor=center
+            }
+            [
+                {L=0\\U=25}, align=center, label={above:{x=(2.5, 0, 0, 0)}}
+                [
+                    Infeasible, edge label={node[midway, left]{$x_1\ge 3$}}
+                ]
+                [
+                    {L=0\\U=24.5}, align=center, label={above:{x=(2, 0.4, 0, 0)}}, edge label={node[midway, right, yshift=0.8em]{$x_1\le 2$}}
+                    [
+                        {L=0\\U=24.67}, align=center, label={above:{x=(2, 0, 0.67, 0)}}, edge label={node[midway, left, yshift=0.8em]{$x_2=0$}}
+                        [
+                            {L=0\\U=23}, align=center, label={above:{x=(2, 0, 0, 2)}}, edge label={node[midway, left, yshift=0.8em]{$x_3=0$}}
+                            [
+                                {L=20\\U=23}, align=center, label={above:{x=(2, 0, 0, 0)}}, edge label={node[midway, left, yshift=0.8em]{$x_4=0$}}
+                            ]
+                            [
+                                {L=21.5\\U=23}, align=center, label={above:{x=(2, 0, 0, 1)}}, edge label={node[midway, right, yshift=0.8em]{$x_4=1$}}
+                            ]
+                        ]
+                        [
+                            {L=0\\U=24.5}, align=center, label={above:{x=(1.75, 0, 1, 0)}}, edge label={node[midway, right, yshift=0.8em]{$x_3=1$}}
+                            [
+                                {pruned\\by bound}, align=center, edge label={node[midway, left]{$x_1\le 1$}}
+                            ]
+                            [
+                                {Infeasible}, edge label={node[midway, auto]{$x_1=2$}}
+                            ]
+                        ]
+                    ]
+                    [
+                        {L=0\\U=24.5}, align=center, label={above:{x=(1.24, 1, 0, 0)}}, edge label={node[midway, right, yshift=0.8em]{$x_2\ge1$}}
+                        [
+                            {L=21.5\\U=24.4}, align=center, label={above:{x=(1, 1.2, 0, 0)}}, edge label={node[midway, left, yshift=0.8em]{$x_1\le1$}}
+                            [
+                                {L=24\\U=24.4}, align=center, label={above:{x=(0, 2, 0, 0)}}, edge label={node[midway, left, yshift=0.8em]{$x_2\ge 2$}}, label={below:{\textbf{Optimal}}}
+                            ]
+                            [
+                                {L=24\\U=24.33}, align=center, label={above:{x=(1, 1, 0.33, 0)}}, edge label={node[midway, right, yshift=0.8em]{$x_2=1$}}
+                                [
+                                    {Infeasible}, edge label={node[midway, left]{$x_3=1$}}
+                                ]
+                                [
+                                    {Infeasible}, edge label={node[midway, right]{$x_3=0$}}
+                                ]
+                            ]
+                        ]
+                        [
+                            {Infeasible}, edge label={node[midway, right]{$x_1=2$}}
+                        ]
+                    ]
+                ]
+            ]
+        \end{forest}
+    \end{figure}
+
+
+    By branch and bound, we can get the optimal solution as 24 where $x_1=0, x_2=2, x_3=0, x_4=0$.
+
+    % \bibliography{literature}
+\end{document}

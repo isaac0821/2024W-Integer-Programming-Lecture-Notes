@@ -1,0 +1,245 @@
+\include{labTemplate}
+\usepackage{makecell}
+\setlength{\parindent}{0pt}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+
+\renewcommand{\docTitle}{Special Topic - Formulation Tips}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+    \titleSec
+
+    \begin{center}
+        \textit{``Trick or Treat.''}
+    \end{center}
+
+    \section{Linear Program Formulation Tips}
+        \paragraph{Absolute Value}
+            
+            Consider the following model statement:
+            \begin{align*}
+                \min \quad & \sum_{j\in J}c_j|x_j|, \quad c_j > 0 \\
+                \text{s.t.} \quad & \sum_{j\in J}a_{ij}x_j \gtreqless b_i, \quad \forall i\in I \\
+                                  & x_j \quad \text{unrestricted}, \quad \forall j\in J 
+            \end{align*}
+
+            
+            Equivalent model:
+            \begin{align*}
+                \min \quad & \sum_{j\in J}c_j(x_j^+ + x_j^-), \quad c_j > 0 \\
+                \text{s.t.} \quad & \sum_{j\in J}a_{ij}(x_j^+ - x_j^-) \gtreqless b_i, \quad \forall i\in I \\
+                                  & x_j^+, x_j^- \ge 0, \quad \forall j\in J 
+            \end{align*}
+
+        \paragraph{Minimax Objective}
+            
+            Consider the following model statement:
+            \begin{align*}
+                \min \quad & \max_{k\in K}\sum_{j\in J}c_{kj}x_j \\
+                \text{s.t.} \quad & \sum_{j\in J}a_{ij}x_j \gtreqless b_i, \quad \forall i\in I \\
+                                  & x_j \ge 0, \quad \forall j\in J 
+            \end{align*}
+            
+            Equivalent model:
+            \begin{align*}
+                \min \quad & z \\
+                \text{s.t.} \quad & \sum_{j\in J}a_{ij}x_j \gtreqless b_i, \quad \forall i\in I \\
+                                  & \sum_{j\in J}c_{kj}x_j \le z, \quad \forall k\in K \\
+                                  & x_j \ge 0, \quad \forall j\in J 
+            \end{align*}
+        \paragraph{Fractional Objective}
+            
+            Consider the following model statement:
+            \begin{align*}
+                \min \quad & \frac{\sum_{j\in J}c_{j}x_j + \alpha}{\sum_{j\in J}d_{j}x_j + \beta} \\
+                \text{s.t.} \quad & \sum_{j\in J}a_{ij}x_j \gtreqless b_i, \quad \forall i\in I \\
+                                  & x_j \ge 0, \quad \forall j\in J 
+            \end{align*}
+            
+            Equivalent model:
+            \begin{align*}
+                \min \quad & \sum_{j\in J}c_{j}x_jt + \alpha t \\
+                \text{s.t.} \quad & \sum_{j\in J}a_{ij}x_j \gtreqless b_i, \quad \forall i\in I \\
+                                  & \sum_{j\in J}d_jx_jt + \beta t = 1\\
+                                  & t > 0 \\
+                                  & x_j \ge 0, \quad \forall j\in J \\
+                                  & (t = \frac1{\sum_{j\in J}d_jx_j + \beta})
+            \end{align*}
+        \paragraph{Range Constraint}
+            
+            Consider the following model statement:
+            \begin{align*}
+                \min \quad & \sum_{j\in J}c_jx_j \\
+                \text{s.t.} \quad & d_i\le \sum_{j\in J}a_{ij}x_j \le e_i, \quad \forall i\in I \\
+                                  & x_j \ge 0, \quad \forall j\in J 
+            \end{align*}
+            
+            Equivalent model:
+            \begin{align*}
+                \min \quad & \sum_{j\in J}c_jx_j, \quad c_j > 0 \\
+                \text{s.t.} \quad & u_i + \sum_{j\in J}a_{ij}x_j = e_i, \quad \forall i\in I \\
+                                  & x_j \ge 0, \quad \forall j\in J \\
+                                  & 0\le u_i \le e_i-d_i, \quad \forall i\in I 
+            \end{align*}
+
+    \section{Integer Program Formulation Tips}
+        \paragraph{A Variable Taking Discontinuous Values}
+             In algebraic notation: 
+            \begin{equation*}
+                x = 0,\quad \text{or} \quad l\le x \le u 
+            \end{equation*}
+            
+            Equivalent model:
+            \begin{align*}
+                & x \le uy \\
+                & x \ge ly  \\
+                & y \in \{0, 1\} 
+            \end{align*}
+            where
+            \begin{equation*}y=\begin{cases}0, & \text{if }x=0 \\ 1, & \text{if } l\le x \le u\end{cases} \end{equation*}
+                
+        \paragraph{Fixed Costs}
+             In algebraic notation: 
+            \begin{equation*}
+                C(x) = \begin{cases} 0 & \text{for } x=0 \\ k + cx & \text{for } x > 0 \end{cases} 
+            \end{equation*}
+            
+            Equivalent model:
+            \begin{align*}
+                & C^*(x, y) = ky+cx\\
+                & x \le My  \\
+                & x \ge 0 \\
+                & y \in \{0, 1\} 
+            \end{align*}
+            where
+            \begin{equation*}y=\begin{cases}0, & \text{if }x=0 \\ 1, & \text{if }x\ge 0\end{cases} \end{equation*}
+        
+        \paragraph{Either-or Constraints}
+             In algebraic notation: 
+            \begin{equation*}
+                \sum_{j\in J} a_{1j} x_j \le b_1 \text{ or } \sum_{j\in J} a_{2j} x_j \le b_2 
+            \end{equation*}
+            
+            Equivalent model:
+            \begin{align*}
+                & \sum_{j\in J} a_{1j} x_j \le b_1 + M_1y  \\
+                & \sum_{j\in J} a_{2j} x_j \le b_2 + M_1(1-y)  \\
+                & y \in \{0, 1\} 
+            \end{align*}
+            where
+            \begin{equation*}y=\begin{cases}0, & \text{if }\sum_{j\in J} a_{1j} x_j \le b_1 \\ 1, & \text{if } \sum_{j\in J} a_{2j} x_j \le b_2\end{cases} \end{equation*}
+            Notice that the sign before $M$ is determined by the inequality $\ge$ or $\le$, if it is \lq\lq{}$\ge$\rq\rq{}, use \lq\lq{}$-$\rq\rq{}, if it \lq\lq{}$\le$\rq\rq{}, use \lq\lq{}+\rq\rq{}.
+        
+        \paragraph{Conditional Constraints}
+             If constraint A is satisfied, then constraint B must also be satisfied
+            \begin{equation*}
+                \text{If} \quad \sum_{j\in J} a_{1j} x_j \le b_1 \text{ then } \sum_{j\in J} a_{2j} x_j \le b_2 
+            \end{equation*}
+            The key part is to find the opposite of the first condition. We are using $A\Rightarrow B \Leftrightarrow \neg B \Rightarrow \neg A$\\
+            Therefore it is equivalent to
+            \begin{equation*}
+                \sum_{j\in J} a_{1j} x_j > b_1 \text{ or } \sum_{j\in J} a_{2j} x_j \le b_2 
+            \end{equation*}
+            Furthermore, it is equivalent to
+            \begin{equation*}
+                \sum_{j\in J} a_{1j} x_j \ge b_1 + \epsilon \text{ or } \sum_{j\in J} a_{2j} x_j \le b_2 
+            \end{equation*}
+            Where $\epsilon$ is a very small positive number.\\
+            
+            Equivalent model:
+            \begin{align*}
+                & \sum_{j\in J} a_{1j} x_j \ge b_1 + \epsilon -  M_2y  \\
+                & \sum_{j\in J} a_{2j} x_j \le b_2 + M_2(1-y)  \\
+                & y \in \{0, 1\} 
+            \end{align*} 
+        
+        \paragraph{Special Ordered Sets}
+            SOS1 Description: Out of a set of yes-no decisions, at most one decision variable can be yes. \
+            \begin{align*}
+                x_1=1,x_2=x_3&=\dots=x_n=0  \\
+                &\text{or}  \\
+                x_2=1, x_1=x_3&=\dots=x_n=0  \\
+                &\text{or ...} 
+            \end{align*} 
+            
+            Equivalent model:
+            \begin{equation*} \sum_{i} x_i = 1, \quad i \in N \end{equation*}
+            
+            SOS2 Description: Out of a set of binary variables, at most two variables can be nonzero. In addition, the two variables must be adjacent to each other in a fixed order list.\\
+            
+            Equivalent model:
+            If $x_1, x_2, ... , x_n$ is a SOS2, then
+            \begin{align*}
+                & \sum_{i=1}^{n} x_i \le 2  \\
+                & x_i + x_j \le 1, \forall i \in \{1, 2,..., n\}, j \in \{i+2, i+3, ..., n\}  \\
+                &x_i \in \{0, 1\}
+            \end{align*}
+                            
+        \paragraph{Piecewise Linear Formulations}
+             The objective function is a sequence of line segments, e.g. $y=f(x), $ consists $k-1$ linear segments going through $k$ given points $(x_1, y_1), (x_2, y_2), ... ,(x_k, y_k)$.\\
+            Denote 
+            \begin{equation*}d_i=\begin{cases}1, & x\in (x_i, x_{i+1})\\0, & \text{otherwise} \end{cases}\end{equation*}
+            Then the objective function is
+            \begin{equation*}\sum_{i \in \{1, 2, ..., k-1\}} y = d_if_i(x) \end{equation*} 
+            
+            Equivalent model: Given that objective function as a piecewise linear formulation, we can have these constraints\\
+            \begin{align*}
+                &\sum_{i \in \{1, 2, ..., k-1\}} d_i =1  \\
+                &d_i \in \{0, 1\}, i \in \{1, 2, ..., k-1\}  \\
+                & x = \sum_{i \in \{1, 2, ..., k\}} w_i x_i  \\
+                & y = \sum_{i \in \{1, 2, ..., k\}} w_i y_i  \\
+                & w_1 \le d_1  \\
+                & w_i \le d_{i-1} + d{i}, i \in \{2, 3, ..., k-1\}  \\
+                & w_k \le d_{k-1} 
+            \end{align*}
+            In this case, $ w_i \in SOS2$ (second definition)       
+                                
+        \paragraph{Conditional Binary Variables}
+             Choose at most $n$ binary variable to be 1 out of  $x_1, x_2, ... x_m, m\ge n$\\
+            If $n=1$ then it is SOS1.\\
+            
+            Equivalent model:
+            \begin{equation*}
+                \sum_{k\in \{1,2,...,m\}} x_k \le n
+            \end{equation*}
+             Choose exactly $n$ binary variable to be 1 out of  $x_1, x_2, ... x_m, m\ge n$\\
+            
+            Equivalent model:
+            \begin{equation*}
+                \sum_{k\in \{1,2,...,m\}} x_k = n
+            \end{equation*}
+             Choose $x_j$ only if $x_k = 1$\\
+            
+            Equivalent model:
+            \begin{equation*}x_j = x_k  \end{equation*}
+             \lq\lq{}and\rq\rq{} condition, iff $x_1, x_2, ... , x_m =1$ then $y=1$\\
+            
+            Equivalent model:
+            \begin{align*}
+                & y \le x_i, i\in \{1, 2, ..., m\}  \\
+                & y \ge \sum_{i \in \{1, 2, ..., m\}} x_i - (m - 1) 
+            \end{align*}
+
+        \paragraph{Elimination of Products of Variables}
+             For variables $x_1$ and $x_2$,
+            \begin{equation*}y = x_1 x_2\end{equation*}
+            
+            Equivalent model: If $x_1, x_2$ are binary, it is the same as \lq\lq{}and\rq\rq{} condition of binary variables.\\
+            If $x_1$ is binary, while $x_2$ is continuous and $0 \le x_2 \le u$, then
+            \begin{align*}
+                y &\le ux_1  \\
+                y &\le x_2  \\
+                y &\ge x_2 - u(1- x_1)  \\
+                y &\ge 0 
+            \end{align*}
+            If both $x_1$ and $x_2$ are continuous, it is non-linear, we can use Piecewise linear formulation to simulate.
+
+    % \bibliography{literature}
+\end{document}

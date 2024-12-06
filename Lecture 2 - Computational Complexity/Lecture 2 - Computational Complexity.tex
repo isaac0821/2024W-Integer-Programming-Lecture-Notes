@@ -1,0 +1,607 @@
+\include{labTemplate}
+\usepackage{makecell}
+\usepackage{float}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+
+\renewcommand{\docTitle}{Lecture 2 - Computational Complexity and Algorithm Design}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+    \titleSec
+
+    \begin{center}
+        \texttt{``import numpy as np''}
+    \end{center}
+
+    \section{Preliminaries}
+        \subsection{How difficult is to solve an integer program?}
+            \begin{itemize}
+                \item Hard!
+                \item What is ``hard''? $\Rightarrow$ measurement of difficulties.
+                \item $\Rightarrow$ computational complexity $\Rightarrow$ the art of classifying computational problems according to their resource usage.
+                \item What is ``algorithm''? $\Rightarrow$ Given a string $s$, an algorithm takes the input $s$ and within finite number of steps, returns an output string $s^\prime$.
+                \item What is ``resource usage''? $\Rightarrow$ How much \textit{time}/\textit{space} it takes for an algorithm to process $s$?
+            \end{itemize}
+
+        \subsection{Asymptotic Notation}
+            \paragraph{$O$-Notation}
+                Let $f(n)$ and $g(n)$ be real functions. We say $f(n) = O(g(n))$ if there exist positive constants $n_0$ and $c$ such that
+                \begin{equation*}
+                    0 \le f(n) \le cg(n), \quad \forall n \ge n_0
+                \end{equation*}
+
+                A common trick that finds $O(g(n))$ for $f(n)$ is to find function $g(n)$ such that 
+                \begin{equation*}
+                    \lim_{n \rightarrow \infty} \frac{f(n)}{g(n)} = C \quad \text{(constant)}
+                \end{equation*}
+
+                The $O$-Notation is referred as the asymptotic upper bound. The $O$-Notation is more widely used, since it can provide a clear estimate of the worst case time/space complexity of an algorithm that exclusively considers the critical grow factors.
+
+            \paragraph{$\Omega$-Notation}
+                Let $f(n)$ and $g(n)$ be real functions. We say $f(n) = \Omega(g(n))$ if there exist positive constants $n_0$ and $c$ such that
+                \begin{equation*}
+                    0 \le cg(n) \le f(n), \quad \forall n \ge n_0
+                \end{equation*}
+
+                The $\Omega$-Notation is referred as the asymptotic lower bound. In addition:
+
+                \begin{theorem}
+                    $f(n) = O(g(n)) \Leftrightarrow g(n) = \Theta(f(n))$
+                \end{theorem}
+            
+            \paragraph{$\Theta$-Notation}
+                Let $f(n)$ and $g(n)$ be real functions. We say $f(n) = \Theta(g(n))$ if there exist positive constants $n_0$, $c_1$, and $c_2$ such that
+                \begin{equation*}
+                    c_1g(n) \le f(n) \le c_2g(n), \quad \forall n \ge n_0
+                \end{equation*}
+
+                The $\Theta$-Notation is referred as the asymptotic tight bound. In addition:
+
+                \begin{theorem}
+                    $f(n) = \Theta(g(n)) \Leftrightarrow f(n) = O(g(n)) \text{ and } f(n) = \Omega(g(n))$
+                \end{theorem}
+
+    \section{P v.s. NP}
+        \subsection{P and NP}
+            \paragraph{Decision problem} A decision problem $X$ is the set of strings on which the output is yes, i.e., $s \in X$ iff the correct output for the input $s$ is 1 (yes).
+
+                \begin{example}
+                    The optimization version of the knapsack problem: Given a set of items $N$, each item $i \in N$ having a weight $w_i$ and a value $c_i$, a capacity $b$ and a threshold value $k$, find a collection of items $S \subseteq N$ of the maximum value whose total weight is less than or equal to $b$. The output is a set $S$.
+
+                    The decision version of the knapsack problem: Given a set of items $N$, each item $i \in N$ having a weight $w_i$ and a value $c_i$, a capacity $b$ and a threshold value $k$, determine if there exists a collection of items $S \subseteq N$ whose total weight is less than or equal to $b$ and its total value is at least $k$. The output is a boolean value, True/False.
+                \end{example}
+
+                If we have an algorithm to solve the optimization version of knapsack problem, we can immediately solve the decision version. 
+
+            \paragraph{Class $P$}
+                \begin{definition}[polynomial running time]
+                    Algorithm $A$ has polynomial running time if there is a polynomial function $p(\dot)$ such that for every string $s$, $A$ terminates on $s$ in at most $p(|s|)$ steps.
+                \end{definition}
+
+                \begin{definition}[Class $P$]
+                    The complexity class $P$ is the set of decision problems $X$ that can be solved in polynomial time.
+                \end{definition}
+
+                That is, there is a known algorithm that provides the solution of any instance of size $n$ in time $n^{O(1)}$.
+
+                \begin{example} The following problems are known as in class $P$:
+                    \begin{itemize}
+                        \item Shortest path problem
+                        \item Maximum flow problem
+                        \item Spanning tree problem
+                        \item Linear programming (but not the simplex method)
+                        \item Assignment problem
+                    \end{itemize}
+                \end{example}
+
+            \paragraph{Class NP}
+                \begin{definition}[certifier, certificate]
+                    $B$ is an efficient certifier for a problem $X$ if
+                    \begin{itemize}
+                        \item $B$ is a polynomial-time algorithm that takes two input strings $s$ and $t$
+                        \item There is a polynomial function $p$ such that $s \in X$ if and only if there is a string $t$ such that $|t| \le p(|s|)$ and $B(s, t) = 1$
+                    \end{itemize}
+                    The string $t$ such that $B(s, t) = 1$ is called a certificate.
+                \end{definition}
+
+                \begin{example}
+                    Q: Given a graph $G = (V, E)$ with a Hamiltonian cycle, how can one convince another there exists a Hamiltonian cycle? 
+
+                    A: One can send a string (certificate) to another, the other will run an algorithm (certifier) to check if the string represents a Hamiltonian cycle.
+                \end{example}
+
+                \begin{definition}[class NP]
+                    The complexity class NP is the set of all problems for which there exists an polynomial-time certifier.
+                \end{definition}
+
+            \paragraph{P v.s. NP}
+                \begin{itemize}
+                    \item Is $P = NP?$ This is the most famous and fundamental open problem in computer science.
+                    \item Most people believe $P \neq NP$.
+                    \item If $P = NP$, that means if one can check a solution in polynomial time, one can solve it in polynomial time.
+                    \item We are sure that $P \subseteq NP$
+                \end{itemize}
+
+        \subsection{Polynomial Time Reduction}
+            \paragraph{Polynomial-time reducible} Given a black box algorithm $A$ that solves a problem $X$, if any instance of a problem $Y$ can be solved using a polynomial number of standard computational steps, plus a polynomial number of calls to $A$, then we say $Y$ is polynomial-time reducible to $X$, denoted as $Y \le_P X$.
+
+            Suppose $Y \le_P X$:
+            \begin{itemize}
+                \item If $X$ can be solved in polynomial time, then $Y$ can be solved in polynomial time.
+                \item If $Y$ cannot be solved in polynomial time, then $X$ cannot be solved in polynomial time.
+            \end{itemize}
+
+            $X$ is at least as hard as $Y$.
+
+        \subsection{NP-Completeness}
+            \paragraph{NP-Completeness}
+                A problem $X$ is called NP-complete if
+                \begin{itemize}
+                    \item $X \in NP$, and
+                    \item $Y \le_P X$, for every $Y \in NP$
+                \end{itemize}
+
+                If any NP-complete problem can be solved in polynomial time, then $P = NP$. Unless $P = NP$, a NP-complete problem cannot be solved in polynomial time.
+
+            \paragraph{Circuit-Sat}
+                The Circuit Satisfiability problem is the first NP-complete problem.
+
+                \begin{theorem}[Cook's Theorem]
+                    SAT is NP-Complete
+                \end{theorem}
+
+                \begin{figure}[H]
+                    \centering
+                    \includegraphics[width=0.5\textwidth]{../../image/circuit.png}
+                \end{figure}
+
+                \begin{itemize}
+                    \item key fact: any algorithm that takes $n$ bits as input and outputs $0/1$ with running time $T(n)$ can be converted into a circuit of size $p(T(n))$ for some polynomial function $p(\cdot)$.
+                    \item Then, we can show that any problem $Y \in NP$ can be reduced to Circuit-Sat
+                \end{itemize}
+
+            \paragraph{Reductions of NP-Complete problems}
+                We will show a SAT $\le_P$ 3-SAT
+
+                \begin{definition}[3-CNF]
+                    3-CNF is a special case of formula:
+                    \begin{itemize}
+                        \item Boolean variables: $x_1, x_2, \cdots, x_n$
+                        \item Literals: $x_i$ or $\bar{x_i}$
+                        \item Clause: disjunction (``or'') of at most 3 literals
+                        \item 3-CNF formula: conjunctino (``and'') of clauses.
+                    \end{itemize}
+                \end{definition}
+
+                \begin{example}
+                    This is a 3-CNF: $(x_1 \vee x_2 \vee x_3) \wedge (x_2 \vee \bar{x_3} \vee x_4)$
+                \end{example}
+
+                To satisfy a 3-CNF, we need to satisfy all clauses. To satisfy a clause, we need to satisfy at least 1 literal. Associate every wire with a new variable, the circuit will be equivalent to a formula. Each formula can be transformed into a 3-CNF. 
+
+                The SAT is satisfiable iff the 3-CNF is satifiable, and the size of the 3-CNF formula is polynomial in the size of the circuit. Thus SAT $\le_P$ 3-SAT.
+
+                For other problems, here is a polynomial-reducible relation graph for reference.
+
+                \begin{figure}[H]
+                    \centering
+                    \includegraphics[width=0.8\textwidth]{../../image/polyRedu.png}
+                \end{figure}
+
+    \section{Algorithm Analysis and Design}
+        \subsection{Three programming paradigms}
+            \paragraph{Greedy Algorithm}
+                \begin{itemize}
+                    \item Make a greedy choice
+                    \item At each step, make an irrevocable decision using a ``reasonable'' strategy
+                    \item Prove that the greedy choice is safe
+                    \item Show that the remaining task after applying the strategy is to solve a/many \textbf{smaller instance}(s) of the same problem
+                    \item Usually for optimization problems.
+                \end{itemize}
+
+            \paragraph{Dynamic Programming}
+                \begin{itemize}
+                    \item Break up a problem into many \textbf{overlapping} sub-problems
+                    \item Build solutions for larger and larger sub-problems
+                    \item Use a table/dictionary to store solutions for sub-problems for reuse
+                \end{itemize}
+
+            \paragraph{Divide and Concur}
+                \begin{itemize}
+                    \item Break a problem into many \textbf{independent} sub-problems
+                    \item Solve each sub-problem separately
+                    \item Combine solutions for sub-problems to form a solution for the original one
+                    \item Usually used to design more efficient algorithms
+                \end{itemize}
+
+        \subsection{Master Theorem}
+            \begin{theorem}
+                $T(n) = aT(n/b) + O(n^c)$, where $a \ge 1, b > 1, c \ge 0$ are constants. Then,
+                \begin{equation*}
+                    T(n) = \begin{cases}
+                        & O(n^{\log_b a}) \quad \text{if } c < \log_b a\\
+                        & O(n^c \log n) \quad \text{if } c = \log_b a\\
+                        & O(n^c) \quad \text{if } c > \log_b a
+                    \end{cases}
+                \end{equation*}
+            \end{theorem}
+
+            \begin{figure}[H]
+                \centering
+                \includegraphics[width=0.8\textwidth]{../../image/masterTheorem.png}
+                \label{fig:masterTheorem}
+            \end{figure}
+
+            \begin{itemize}
+                \item $c < \log_b a$: bottom-level dominates, $(\frac{a}{b^c})^{\log_b n} n^c = O(n^{\log_b a})$
+                \item $c = \log_b a$: all levels have same time, $n^c \log_b n = O(n^c \log n)$
+                \item $c > \log_b a$: top-level dominates, $O(n^c)$
+            \end{itemize}
+
+    \section{Some examples}
+        \subsection{Minimum Spanning Tree Problem}
+            \paragraph{Basic Concepts}
+                \begin{example}
+                    A company wants to build a communication network for their offices. For a link between office $v$ and office $w$, there is a cost $c_{vw}$. If an office is connected to another office, then they are connected to with all its neighbors. Company wants to minimize the cost of communication networks.
+                \end{example}
+
+                \begin{definition}[Minimum spanning tree problem]
+                    Given a connected graph graph $G$, and a cost $C_e, \forall e\in E$, find a minimum cost spanning tree of $G$
+                \end{definition}
+
+            \paragraph{Kruskal's Algorithm}
+                Let's start with a greedy algorithm
+
+                \begin{algorithm}[H]
+                    \caption{MST-Greedy(G, w)}
+                    \begin{algorithmic}[1]
+                        \State $F = \emptyset$
+                        \State Sort edges in $E$ in non-decreasing order of weight $w$
+                        \For {$e = (u, v)$}
+                            \If {$u$ and $v$ are not connected by a path of edge in $F$}
+                                \State $F = F \cup \{(u, v)\}$
+                            \EndIf
+                        \EndFor
+                        \State \Return $F$
+                    \end{algorithmic}
+                \end{algorithm}
+
+
+                The Kruskal's algorithm is as follows
+                \begin{algorithm}[H]
+                    \caption{Kruskal's Algorithm}
+                    \begin{algorithmic}
+                        \State $F \gets \emptyset$
+                        \State $S \gets \{\{v\}: v \in V\}$
+                        \State Sort edges in $E$ in non-decreasing order of weight $w$
+                        \For {$e = (u, v)$}
+                            \State $S_u \gets$ the set in $S$ containing $u$
+                            \State $S_v \gets$ the set in $S$ containing $v$
+                            \If {$S_u \neq S_v$}
+                                \State $F \gets F \cup \{(u, v)\}$
+                                \State $S \gets S \setminus \{S_u\} \setminus \{S_v\} \cup \{S_u \cup S_v\}$
+                            \EndIf
+                        \EndFor
+                        \State \Return $F$
+                    \end{algorithmic}
+                \end{algorithm}
+
+            \paragraph{Prim's Algorithm}
+                Let's start with another greedy algorithm
+                \begin{algorithm}[H]
+                    \caption{MST-Greedy(G, w)}
+                    \begin{algorithmic}
+                        \State $S \gets \{s\}$, where $s$ is arbitary vertex in $V$
+                        \State $F \gets \emptyset$
+                        \While {$S \neq V$}
+                            \State $(u, v) \gets$ the lightest edge between $S$ and $V \setminus S$, where $u \in S$ and $v \in V \setminus S$
+                            \State $S \gets S \cup \{v\}$
+                            \State $F \gets F \cup \{(u, v)\}$
+                        \EndWhile
+                    \end{algorithmic}
+                \end{algorithm}
+
+                The Prim's algorithm is as follows
+                \begin{algorithm}[H]
+                    \caption{Prim's Algorithm}
+                    \begin{algorithmic}
+                        \State $s \gets$ arbitary vertex in $G$
+                        \State $S \gets \emptyset$, $d(s) \gets 0$ and $d(v) \gets \infty$ for every $v \in V \setminus \{s\}$
+                        \While {$S \neq V$}
+                            \State $u \gets $ vertex in $V\setminus S$ with minimum $d(u)$
+                            \State $S \gets S \cup \{u\}$
+                            \For {Each $v \in V \setminus S$ such that $(u, v) \in E$}
+                                \If {$w(u, v) < d(v)$}
+                                    \State $d(v) \gets w(u, v)$
+                                    \State $\pi(v) \gets u$
+                                \EndIf
+                            \EndFor
+                        \EndWhile
+                        \State \Return $\{(u, \pi(u))| u \in V \setminus \{s\}\}$
+                    \end{algorithmic}
+                \end{algorithm}
+
+        \subsection{Knapsack Problem}
+            \paragraph{Integer program model}
+                \begin{align}
+                    \max \quad & \sum_{i \in S} v_i\\
+                    \text{s.t.} \quad & \sum_{i \in S} w_i \le W\\
+                    & w_i \ge 0, \forall i \in S
+                \end{align}
+
+            \paragraph{Solve knapsack problem by dynamic programming}
+                \begin{itemize}
+                    \item Let $opt[i, W^\prime]$ be the optimum value when budget is $W^\prime$ and the items are $\{1, 2, 3, \cdots, i\}$.
+                    \item If $i = 0, opt[i, W^\prime] = 0$ for every $W^\prime = 0, 1, \cdots, W$. Then
+                    \item $opt[i, W'] = \begin{cases}
+                        & 0, \qquad i = 0\\
+                        & opt[i - 1, W^\prime], \qquad i > 0, w_i > W^\prime \\
+                        & \max \left\{ opt[i - 1, W^\prime], opt[i - 1, W^\prime - w_i] + v_i \right\}, \qquad i > 0, w_i \le W^\prime
+                    \end{cases}$
+                \end{itemize}
+                
+        \subsection{Fibonacci Numbers}
+            \paragraph{Fibonacci sequence}
+                \begin{equation}
+                    0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, \cdots
+                \end{equation}
+
+            \paragraph{Naive algorithm}
+                Use recursion (in a stupid way)
+                \begin{algorithm}[H]
+                    \caption{Fib(n)}
+                    \begin{algorithmic}[1]
+                        \If {$n = 0$}
+                            \State \Return 0
+                        \EndIf
+                        \If {$n = 1$}
+                            \State \Return 1
+                        \EndIf
+                        \State \Return Fib($n - 1$) + Fib($n - 2$)
+                    \end{algorithmic}
+                \end{algorithm}
+
+                The runtime is exponential $O(2^n)$. This is stupid.
+
+            \paragraph{Reasonable algorithm}
+                Use dynamic programming
+                \begin{algorithm}[H]
+                    \caption{Fib(n)}
+                    \begin{algorithmic}[1]
+                        \State F(0) $\gets$ 0
+                        \State F(1) $\gets$ 1
+                        \For {$i \gets 2$ to $n$}
+                            \State F($i$) $\gets$ F($i - 1$) + F($i - 2$)
+                        \EndFor
+                        \State \Return F(n)
+                    \end{algorithmic}
+                \end{algorithm}
+
+                The runtime is $O(n)$.
+
+            \paragraph{Even better algorithm}
+                
+                Notice that
+
+                \begin{align*}
+                    \begin{bmatrix}
+                        F_n \\ F_{n - 1}
+                    \end{bmatrix} &= \begin{bmatrix}
+                        1 & 1 \\ 1 & 0
+                    \end{bmatrix} \begin{bmatrix}
+                        F_{n - 1} \\ F_{n - 2}
+                    \end{bmatrix}\\
+                    \begin{bmatrix}
+                        F_n \\ F_{n - 1}
+                    \end{bmatrix} &= \begin{bmatrix}
+                        1 & 1 \\ 1 & 0
+                    \end{bmatrix}^2 \begin{bmatrix}
+                        F_{n - 2} \\ F_{n - 3}
+                    \end{bmatrix}\\
+                    &\cdots\\
+                    \begin{bmatrix}
+                        F_n \\ F_{n - 1}
+                    \end{bmatrix} &= \begin{bmatrix}
+                        1 & 1 \\ 1 & 0
+                    \end{bmatrix}^{n - 1} \begin{bmatrix}
+                        F_1 \\ F_0
+                    \end{bmatrix}\\
+                \end{align*}
+
+                First define power($n$)
+
+                \begin{algorithm}[H]
+                    \caption{power(n)}
+                    \begin{algorithmic}[1]
+                        \If {$n = 0$}
+                            \State \Return $\begin{bmatrix}
+                                1 & 0 \\ 0 & 1
+                        \end{bmatrix}$
+                        \EndIf
+                        \State $R \gets$ power($n/2$.floor())
+                        \State $R \gets R \times R$
+                        \If {$n$ is odd number}
+                            \State $R \gets R \times \begin{bmatrix}
+                                1 & 1 \\ 1 & 0
+                            \end{bmatrix}$
+                        \EndIf
+                        \State \Return $R$
+                    \end{algorithmic}
+                \end{algorithm}
+
+                Then the Fibonacci sequence is calculated by
+
+                \begin{algorithm}[H]
+                    \caption{Fib(n)}
+                    \begin{algorithmic}[1]
+                        \If {$n = 0$}
+                            \State \Return 0
+                        \EndIf
+                        \State $M \gets $ power($n - 1$)
+                        \State \Return M[1][1]
+                    \end{algorithmic}
+                \end{algorithm}
+
+                The time complexity is $T(n) = T(n/2) + O(1) = O(\log n)$
+
+        \subsection{Multiplications}
+            \paragraph{Polynomial Multiplication}
+                Given two polynomials of degree $n - 1$, we need to find the product of two polynomials.
+
+                \begin{example}
+                    Let $A = (4, -5, 2, 3)$ and $B = (-5, 6, -3, 2)$ as input. The expected output $C = (-20, 49, -52, 20, 2, -5, 6)$, since
+                    \begin{align*}
+                        &(3 x^3 + 2 x^2 - 5 x + 4) \times (2 x^3 - 3 x^2 + 6x - 5)\\
+                       =& 6 x^6 - 9 x^5 + 18 x^4 - 15 x^3 + 4 x^5 - 6x^4 + 12x^3 - 10 x^2\\
+                        & -10 x^4 + 15 x^3 - 30 x^2 + 25 x + 8 x^3 - 12 x^2 + 24 x - 20\\
+                       =& 6 x^6 - 5 x^5 + 2x^4 + 20x^3 - 52 x^2 + 49 x - 20
+                    \end{align*}
+                \end{example}
+
+                A naive algorithm for polynomial multiplication is as follows
+                \begin{algorithm}[H]
+                    \caption{naivePolyMultiply($A, B, n$)}
+                    \begin{algorithmic}[1]
+                        \State Let $C[k] = 0$ for every $k = 0, 1, \cdots, 2n - 2$
+                        \For {$i \gets 0$ to $n - 1$}
+                            \For {$j \gets 0$ to $n - 1$}
+                                \State $C[i + j] \gets C[i + j] + A[i] \times B[j]$
+                            \EndFor
+                        \EndFor
+                        \State \Return $C$
+                    \end{algorithmic}
+                \end{algorithm}
+
+                Obviously, the running time is $O(n^2)$. Now we try to use divide-and-conquer to improve. For a polynomial $p(x)$ with degree of $n - 1$, denote
+                \begin{equation*}
+                    p(x) = p_H(x) x^{\frac{n}{2}} + p_L(x)
+                \end{equation*}
+
+                then, $p_H(x)$ and $p_L(x)$ are polynomials of degree $n/2 - 1$. Consider
+                \begin{equation*}
+                    pq = (p_H x^{\frac{n}{2}} + p_L)(q_H x^{\frac{n}{2}} + q_L) = p_Hq_Hx^n + (p_Hq_L + p_Lq_H)x^{\frac{n}{2}} + p_Lq_L
+                \end{equation*}
+
+                The recurrence time is
+                \begin{equation*}
+                    T(n) = 4T(n/2) + O(n) = O(n^2)
+                \end{equation*}
+
+                still not good... Consider
+                \begin{align*}
+                    pq &= (p_H x^{\frac{n}{2}} + p_L)(q_H x^{\frac{n}{2}} + q_L) \\
+                       &= p_Hq_Hx^n + ((p_H + p_L)(q_H + q_L) - p_Hq_H - p_Lq_L)x^{\frac{n}{2}} + p_Lq_L
+                \end{align*}
+
+                The new recurrence time is
+                \begin{equation*}
+                    T(n) = 3T(n/2) + O(n) = O(n^{\log_2 3}) = O(n^{1.585})
+                \end{equation*}
+
+                Better!!! The algorithm is given as follows
+
+                \begin{algorithm}[H]
+                    \caption{polyMultiply($A, B, n$)}
+                    \label{algo:polyMultiply}
+                    \begin{algorithmic}[1]
+                        \State $A_L \gets A[0 .. n/2-1]$, $A_H \gets A[n/2 .. n-1]$
+                        \State $B_L \gets B[0 .. n/2-1]$, $B_H \gets B[n/2 .. n-1]$
+                        \State $C_L \gets polyMultiply(A_L, B_L, n/2)$
+                        \State $C_H \gets polyMultiply(A_H, B_H, n/2)$
+                        \State $C_M \gets polyMultiply(A_L + A_H, B_L + B_H, n/2)$
+                        \State Initialize $C \gets [0 .. 0]$ ($2n - 1$) 0s
+                        \For {$i \gets 0$ to $n - 2$}
+                            \State $C[i] \gets C[i] + C_L[i]$
+                            \State $C[i + n] \gets C[i + n] + C_H[i]$
+                            \State $C[i + n/2] \gets C[i + n/2] + C_M[i] - C_L[i] - C_H[i]$
+                        \EndFor
+                        \State \Return $C$
+                    \end{algorithmic}
+                \end{algorithm}
+
+                Notice that the name of Algorithm \ref{algo:polyMultiply} appears inside itself (line 3, 4, 5). This is referred as \textit{recursion}. The key to recursion functions is to break complex problems into smaller instances of the \textbf{same} problems, so we need to ``think beyond timescape''.
+
+            \paragraph{Matrix multiplication}
+                Given two matrices $\mathbf{A} \in \mathbb{R}^{n\times}$ and $\mathbf{B} \in \mathbb{R}^{n\times}$, we need to find the production, $\mathbf{C} = \mathbf{AB} \in \mathbb{R}^{n\times}$.
+
+                A naive algorithm for matrix multiplication is as follows
+
+                \begin{algorithm}[H]
+                    \caption{naiveMatMultiply(A, B, n)}
+                    \begin{algorithmic}[1]
+                        \For {$i \gets 1$ to $n$}
+                            \For {$j \gets 1$ to $n$}
+                                \State $C[i, j] \gets 0$
+                                \For {$k \gets 1$ to n}
+                                    \State $C[i, j] \gets C[i, j] + A[i, k] \times B[k, j]$
+                                \EndFor
+                            \EndFor
+                        \EndFor
+                        \State \Return $C$
+                    \end{algorithmic}
+                \end{algorithm}
+
+                The running time is $O(n^3)$. Try divided-and-conquer. Let
+
+                \begin{align*}
+                    \mathbf{A} = \begin{bmatrix}
+                        \mathbf{A}_{11} & \mathbf{A}_{12}\\
+                        \mathbf{A}_{21} & \mathbf{A}_{22}
+                    \end{bmatrix}, \quad
+                    \mathbf{B} = \begin{bmatrix}
+                        \mathbf{B}_{11} & \mathbf{B}_{12}\\
+                        \mathbf{B}_{21} & \mathbf{B}_{22}
+                    \end{bmatrix}
+                \end{align*}
+
+                each sub-matrix is $n/2 \times n/2$. Then
+
+                \begin{align*}
+                    \mathbf{C} = \begin{bmatrix}
+                        \mathbf{A}_{11}\mathbf{B}_{11} + \mathbf{A}_{12}\mathbf{B}_{21} &
+                        \mathbf{A}_{11}\mathbf{B}_{12} + \mathbf{A}_{12}\mathbf{B}_{22} \\
+                        \mathbf{A}_{21}\mathbf{B}_{11} + \mathbf{A}_{22}\mathbf{B}_{21} & 
+                        \mathbf{A}_{21}\mathbf{B}_{12} + \mathbf{A}_{22}\mathbf{B}_{22}
+                    \end{bmatrix}
+                \end{align*}
+
+                Still not good enough because $T(n) = 8T(n/2) + O(n)$. 
+
+            \paragraph{Strassen's Algorithm}
+
+                In 1969, the first matrix multiplication algorithm with time complexity lower than $O(n^3)$ was introduced by Volker Strassen, the famous Strassen's Algorithm. 
+
+                For $\mathbf{A}, \mathbf{B}, \mathbf{C}$, let
+                \begin{align*}
+                    \mathbf{M}_1 &= (\mathbf{A}_{11} + \mathbf{A}_{22}) (\mathbf{B}_{11} + \mathbf{B}_{22})\\
+                    \mathbf{M}_2 &= (\mathbf{A}_{21} + \mathbf{A}_{22}) \mathbf{B}_{11}\\
+                    \mathbf{M}_3 &= \mathbf{A}_{11} (\mathbf{B}_{12} - \mathbf{B}_{22})\\
+                    \mathbf{M}_4 &= \mathbf{A}_{22} (\mathbf{B}_{21} - \mathbf{B}_{11})\\
+                    \mathbf{M}_5 &= (\mathbf{A}_{11} + \mathbf{A}_{12}) \mathbf{B}_{22}\\
+                    \mathbf{M}_6 &= (\mathbf{A}_{21} - \mathbf{A}_{11}) (\mathbf{B}_{11} + \mathbf{B}_{12}) \\
+                    \mathbf{M}_7 &= (\mathbf{A}_{12} - \mathbf{A}_{22}) (\mathbf{B}_{21} + \mathbf{B}_{22})
+                \end{align*}
+
+                Then, 
+
+                \begin{align*}
+                    \mathbf{C}_{11} &= \mathbf{M}_1 + \mathbf{M}_4 - \mathbf{M}_5 + \mathbf{M}_7\\
+                    \mathbf{C}_{12} &= \mathbf{M}_3 + \mathbf{M}_5\\
+                    \mathbf{C}_{21} &= \mathbf{M}_2 + \mathbf{M}_4\\
+                    \mathbf{C}_{22} &= \mathbf{M}_1 - \mathbf{M}_2 + \mathbf{M}_3 + \mathbf{M}_6
+                \end{align*}
+
+                In total, $T(n) = 7T(n/2) + O(n) = O(n^{\log_2 7})$.
+
+                Why is this important? Matrix multiplication has been widely used in machine learning such as calculating convolutions. For $n > 300$, the Strassen's algorithm will run significantly faster than the naive algorithm.
+
+                There are some algorithms even faster than Strassen, e.g., the Coppersmith-Winograd matrix multiplication algorithm.
+    % \bibliography{literature}
+\end{document}
