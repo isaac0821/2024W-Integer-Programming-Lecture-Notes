@@ -22,50 +22,51 @@
     \end{center}
 
     \section{Preliminary}
-        \subsection{Why Rounding Can be Bad - IP Example}
-            Rounding can be bad because the optimal of IP can be far away from optimal of LP. For example,
-            \begin{align*}
-                \text{max} \quad & z=x_1 +0.64x_2  \\
-                \text{s.t.} \quad & 50x_1 +31x_2 \le 250  \\
-                            & 3x_1-2x_2\ge -4  \\
-                            & x_1,x_2\ge 0 \quad \text{(for LP)}\\
-                            & x_1,x_2 \in Z^+ \quad \text{(for IP)} 
-            \end{align*}
-            \begin{figure}[H]
-                \centering
-                \begin{tikzpicture}[scale=0.7]
-                    \draw [->] (1,1) -- (1, 7);
-                    \draw [->] (1,1) -- (7, 1);
-                    \draw (1,3) -- (2.948, 5.922);
-                    \draw (2.948, 5.922) -- (6, 1);
-                    \draw [->] (1,1) -- (2, 1.64);
-                    \node [right] at (2, 1.64) {z};
-                    \node [above] at (2.984, 5.922) {(1.948, 4.922)};
-                    \node [above] at (2.984, 6.422) {Optimal for LP};
-                    \node [below] at (6,1) {(5, 0)};
-                    \node [below] at (6, 0.5) {Optimal for IP};
-                \end{tikzpicture}
-                \caption{Optimal solution for LP / IP}
-            \end{figure}
+        \subsection{Why Rounding Can be Bad?}
+            \paragraph{IP example}
+                Rounding can be bad because the optimal of IP can be far away from optimal of LP. For example,
+                \begin{align*}
+                    \text{max} \quad & z=x_1 +0.64x_2  \\
+                    \text{s.t.} \quad & 50x_1 +31x_2 \le 250  \\
+                                & 3x_1-2x_2\ge -4  \\
+                                & x_1,x_2\ge 0 \quad \text{(for LP)}\\
+                                & x_1,x_2 \in Z^+ \quad \text{(for IP)} 
+                \end{align*}
+                \begin{figure}[H]
+                    \centering
+                    \begin{tikzpicture}[scale=0.7]
+                        \draw [->] (1,1) -- (1, 7);
+                        \draw [->] (1,1) -- (7, 1);
+                        \draw (1,3) -- (2.948, 5.922);
+                        \draw (2.948, 5.922) -- (6, 1);
+                        \draw [->] (1,1) -- (2, 1.64);
+                        \node [right] at (2, 1.64) {z};
+                        \node [above] at (2.984, 5.922) {(1.948, 4.922)};
+                        \node [above] at (2.984, 6.422) {Optimal for LP};
+                        \node [below] at (6,1) {(5, 0)};
+                        \node [below] at (6, 0.5) {Optimal for IP};
+                    \end{tikzpicture}
+                    \caption{Optimal solution for LP / IP}
+                \end{figure}
 
-        \subsection{Why Rounding Can be Bad - QAP example}
-            Rounding can make the LP useless. For example, for QAP problem, the IP model is
-            \begin{align*}
-                \text{min} \quad z &= \sum_{i\in D} \sum_{s\in O} c_{is} x_{is} + \sum_{i\in D} \sum_{j \in D} \sum_{s \in O} \sum_{t\in O} w_{ij}^{st}y_{ij}^{st}  \\
-                \text{s.t.} \quad & \sum_{i \in D} x_{is} =1, \quad s\in O  \\
-                            &\sum_{s \in O} x_{is} = 1, \quad i \in D  \\
-                            &x_{is} \in \{0, 1\}, \quad i \in D, s\in O  \\
-                            & y_{ij}^{st} \ge x_{is} + x_{jt} - 1, \quad i\in D, j\in D, s\in O, t \in O  \\
-                            & y_{ij}^{st} \ge 0, \quad i\in D, j\in D, s\in O, t \in O  \\
-                            & y_{ij}^{st} \le x_{is}, \quad i\in D, j\in D, s\in O, t \in O  \\
-                            & y_{ij}^{st} \le x_{jt}, \quad i\in D, j\in D, s\in O, t \in O  
-            \end{align*}
-            We can get the optimal solution for LP supposing $\forall i, s \quad x_{is}\in [0, 1]$
-            \begin{align*}
-                x_{is} &= \frac{1}{|D|}, \quad i \in D, s\in O   \\
-                y_{ij}^{st} & = 0, \quad i\in D, j\in D, s\in O, t \in O 
-            \end{align*}
-           
+            \paragraph{QAP example}
+                Rounding can make the LP useless. For example, for QAP problem, the IP model is
+                \begin{align*}
+                    \text{min} \quad z &= \sum_{i\in D} \sum_{s\in O} c_{is} x_{is} + \sum_{i\in D} \sum_{j \in D} \sum_{s \in O} \sum_{t\in O} w_{ij}^{st}y_{ij}^{st}  \\
+                    \text{s.t.} \quad & \sum_{i \in D} x_{is} =1, \quad s\in O  \\
+                                &\sum_{s \in O} x_{is} = 1, \quad i \in D  \\
+                                &x_{is} \in \{0, 1\}, \quad i \in D, s\in O  \\
+                                & y_{ij}^{st} \ge x_{is} + x_{jt} - 1, \quad i\in D, j\in D, s\in O, t \in O  \\
+                                & y_{ij}^{st} \ge 0, \quad i\in D, j\in D, s\in O, t \in O  \\
+                                & y_{ij}^{st} \le x_{is}, \quad i\in D, j\in D, s\in O, t \in O  \\
+                                & y_{ij}^{st} \le x_{jt}, \quad i\in D, j\in D, s\in O, t \in O  
+                \end{align*}
+                We can get the optimal solution for LP supposing $\forall i, s \quad x_{is}\in [0, 1]$
+                \begin{align*}
+                    x_{is} &= \frac{1}{|D|}, \quad i \in D, s\in O   \\
+                    y_{ij}^{st} & = 0, \quad i\in D, j\in D, s\in O, t \in O 
+                \end{align*}
+               
         \subsection{Relaxation}
 
             \paragraph{Local Optimal v.s. Global Optimal}
