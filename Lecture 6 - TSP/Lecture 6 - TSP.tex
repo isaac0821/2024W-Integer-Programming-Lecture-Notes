@@ -1,0 +1,393 @@
+\include{labTemplate}
+\usepackage{makecell}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+
+\renewcommand{\docTitle}{Lecture Note - Traveling Salesman Problem and The Held-Karp Lower Bound}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+    \titleSec
+
+    \begin{center}
+        \textit{``O never go back.''}
+    \end{center}
+
+    \section{The Traveling Salesman Problem}
+        In this section, we are going to compare between different formulations of the Traveling Salesman Problem (TSP). Generally speaking, let $G = (V, A)$ be a graph where $V$ is a set of $n$ vertices, and $A$ is a set of arcs (or edges). Let $C = c_{ij}$ be a cost (distance) matrix associated with $A$. The TSP consists of determining a minimum cost (distance) Hamiltonian circle (or cycle) that visits each vertex once and only once. If for all $i, j \in V, c_{ij} = c_{ji}$, then the TSP is symmetrical, otherwise is asymmetrical.
+
+        Define the decision variable $x_{ij}$ as the following
+        \begin{equation}
+            x_{ij} = \begin{cases}
+                1, &\text{if goes from } i \text{ to } j\\ 
+                0, & \text{otherwise}
+            \end{cases}, \quad (i, j) \in A
+        \end{equation}
+
+        The objective function will be
+        \begin{equation}
+            \min \quad \sum_{(i, j)\in A} c_{ij}x_{ij}
+        \end{equation}
+
+        \subsection{Dantzig-Fulkerson-Johnson (DFJ) Formulation}
+            The first famous formulations for TSP is the \textbf{Dantzig-Fulkerson-Johnson (DFJ) formulation}:
+            \begin{align}
+                \sum_{j \in V, (i,j)\in A} x_{ij} & = 1, \quad \forall i \in V \label{TSP:con:degree1}\\
+                \sum_{i \in V, (i,j)\in A} x_{ij} & = 1, \quad \forall j \in V \label{TSP:con:degree2}\\
+                \sum_{j\notin S, i\in S, (i,j)\in A} x_{ij} & \ge 1, \quad \forall S \subset V, 2\le |S| \le n-1 \label{TSP:con:DFJSubtour1}
+            \end{align}
+
+            In the formulation, constraints (\ref{TSP:con:degree1}) and constraints (\ref{TSP:con:degree2}) are degree constraints, which specify that every vertex is entered exactly once. Constraints (\ref{TSP:con:DFJSubtour1}) is the sub-tour constraints, they prohibit the formation of sub-tours. $S$ is a non-empty subset of $V$, and has at least 2 vertices. (\ref{TSP:con:DFJSubtour1}) can be replaced by
+            \begin{equation}
+                \sum_{i, j \in S, (i, j) \in A} x_{ij} \le |S| - 1, \quad \forall S \subset V, 2\le |S| \le n-1\label{TSP:con:DFJSubtour2}
+            \end{equation}
+
+            If we list all sub-tour constraints in DFJ, there will be $O(2^n)$ constraints and $O(n^2)$ binary variables. The exponential number of constraints makes it impractical to solve directly. Instead, lazy constraints are usually implemented for the sub-tour elimination constraints (\ref{TSP:con:DFJSubtour1}) or (\ref{TSP:con:DFJSubtour2}).
+
+             In the graph $G=(N, A)$, let $\bar{G}=(N, \bar{A})$ be the connected components of graph, where
+            \begin{equation*}
+                \bar{G}=(G, \bar{A}), \bar{A}=\{(i, j) \in A | \bar{x_{ij}}=1\}
+            \end{equation*}
+            
+            denote
+            
+            \begin{equation*}
+                \bar{FS}(i) = \{(i,j)\in \bar{A}\} 
+            \end{equation*}
+
+            The following algorithm describes an algorithm to find subtours:
+            \begin{algorithm}[h!]
+                \caption{Sub-tour Searching Algorithm}
+                \begin{algorithmic}[1]
+                    \State $K = \emptyset$
+                    \State $d_i = 0, \forall i \in N$
+                    \For {$i\in N$}
+                        \State $C = \emptyset$
+                        \State $Q = \emptyset$
+                        \If {$d_i == 0$}
+                            \State $d_i = 1$
+                            \State $C = C\cup \{i\}$
+                            \State Q.append(i)
+                            \While {$Q\ne \emptyset$}
+                                \State v = Q.pop()
+                                \For {$u \in \bar{FS}(v)$}
+                                    \If {$d_u == 0$}
+                                        \State $d_u = 1$
+                                        \State $C = C \cup \{u\}$
+                                        \State Q.append(u)
+                                    \EndIf
+                                \EndFor
+                            \EndWhile
+                        \EndIf
+                        \State $K=K\cup C$
+                    \EndFor
+                \end{algorithmic}
+            \end{algorithm}
+
+            We can add those sub-tour constraints into the formulation on the fly in a Branch-and-cut manner.
+
+        \subsection{Miller-Tucker-Zemlin (MTZ) Formulation}
+            We can also formulate TSP using sequential formulations, namely, \textbf{Miller-Tucker-Zemlin (MTZ) formulation}. In the MTZ formulation, the degree constraints (\ref{TSP:con:degree1}) and (\ref{TSP:con:degree2}) are the same as in DFJ formulation.
+
+            Define a new set of integer decision variables $u_i$, $u_i$ defined as the sequence in which node $i$ is visited, $u_1 = 1$.
+
+            The sub-tour constraints (\ref{TSP:con:DFJSubtour1}) or (\ref{TSP:con:DFJSubtour2}) are replaced by the following:
+            \begin{align}
+                u_i - u_j + (n - 1) x_{ij} &\le n - 2, \quad i, j = 2, \cdots, n \in V, (i, j) \in A \label{TSP:con:MTZ1}\\
+                1 & \le u_i \le n - 1, \quad i \in 2, \cdots, n \in V \label{TSP:con:MTZ2}
+            \end{align}
+
+            In MTZ formulation, there are $O(n^2)$ constraints, $O(n^2)$ binary variables, and $O(n)$ continuous variables.
+
+        \subsection{Flow Based Formulations}
+            In this section, flow based formulations are discussed, which includes \textbf{Single Commodity Flow}, \textbf{Two Commodity Flow} and \textbf{Multi-Commodity Flow}. In these formulations, continuous variables are introduced to represent the flow on the arcs.
+
+            In Single Commodity Flow formulation, define $y_{ij}$ as the flow in an arc $(i, j) \in A$. Degree constraints (\ref{TSP:con:degree1}) and (\ref{TSP:con:degree2}) are retained. The following constraints are introduced:
+            \begin{align}
+                y_{ij} & \le (n - 1) x_{ij}, \quad \forall i, j \in V, (i, j) \in A \label{TSP:con:SCFMaxFlow}\\
+                \sum_{j \in V, (1, j) \in A} y_{1j} & = n - 1 \label{TSP:con:SCFInitFlow} \\
+                \sum_{i \in V, (i, j) \in A} y_{ij} - \sum_{k \in V, (j, k) \in A} y_{jk} &= 1, \quad \forall j \in V \setminus \{1\} \label{TSP:con:SCFFlowBalance}
+            \end{align}
+
+            Constraints (\ref{TSP:con:SCFMaxFlow}) can be tighten by the following:
+            \begin{align}
+                y_{ij} &\le (n - 1) x_{ij}, \quad i = 1, j \in V \setminus \{1\}, (i, j) \in A \label{TSP:con:SCMMaxFlow1} \\
+                y_{ij} &\le (n - 2) x_{ij}, \quad i, j \in V \setminus \{1\}, (i, j) \in A \label{TSP:con:SCMMaxFlow2}
+            \end{align}
+
+            In SCM formulation, there are $O(n^2)$ constraints, $O(n^2)$ binary variables and $O(n^2)$ continuous variables.
+
+            In Two Commodity Flow formulation, define $y_{ij}$ as the flow in an arc $(i, j) \in A$, for commodity type 1, and define $z_{ij}$ as the flow in an arc $(i, j) \in A$, for commodity type 2.
+
+            Besides degree constraints, the other constraints are as following
+            \begin{align}
+                y_{ij} + z_{ij} &= (n - 1) x_{ij}, \quad \forall i, j \in V, (i, j) \in A \label{TSP:con:TCMFlowExist} \\
+                \sum_{j \in V \setminus \{1\}} (y_{1j} - y_{j1}) &= n - 1, \quad (1, j) \in A \label{TSP:con:TCMInitFlowY}\\
+                \sum_{j \in V} (y_{ij} - y_{ji}) & = 1, \quad  \forall i \in V \setminus \{1\}, (i, j) \in A \label{TSP:con:TCMFlowBalanceY}\\
+                \sum_{j \in V \setminus \{1\}} (z_{1j} - z_{j1}) &= 1 - n, \quad (1, j) \in A \label{TSP:con:TCMInitFlowZ}\\
+                \sum_{j \in V} (z_{ij} - z_{ji}) & = -1, \quad  \forall i \in V \setminus \{1\}, (i, j) \in A \label{TSP:con:TCMFlowBalanceZ}\\
+                \sum_{j \in V} (y_{ij} + z_{ij}) &= n - 1, \quad \forall i \in V \label{TSP:con:TCMFlowOnArc}
+            \end{align}
+
+            In TCM formulation, constraints (\ref{TSP:con:TCMFlowExist}) only allow flow in an arc if present. Constraints (\ref{TSP:con:TCMInitFlowY}) and (\ref{TSP:con:TCMFlowBalanceY}) forces $(n - 1)$ units of commodity type 1 to flow in at node 1 and 1 unit to flow out at every other nodes. Constraints (\ref{TSP:con:TCMInitFlowZ}) and (\ref{TSP:con:TCMFlowBalanceZ}) are similar, those forces $(n - 1)$ units of commodity type 2 to flow out at node 1 and 1 unit to flow in at every other nodes. Constraints (\ref{TSP:con:TCMFlowOnArc}) forces exactly $(n - 1)$ units of combined commodity in each arc.
+
+            In TCM formulation, there are $O(n^2)$ constraints, $O(n^2)$ binary variables and $O(n^2)$ continuous variables.
+
+            The SCM and the TCM can be generalized into \textbf{Multi-Commodity Flow formulation}. As usual, degree constraints are retained. The following continuous variables are introduced. Define $y_{ij}^k$ as the flow of commodity type $k$ in arc $(i, j) \in A$.
+
+            The other constraints are
+            \begin{align}
+                y_{ij}^k &\le x_{ij}, \quad \forall i, j, k \in N, k \neq 1 \label{TSP:con:MCMFlowExist}\\
+                \sum_{i \in V} y_{1i}^k &= 1, \quad \forall k \in V \setminus \{1\} \label{TSP:con:MCMInitIn}\\
+                \sum_{i \in V} y_{i1}^k &= 0, \quad \forall k \in V \setminus \{1\} \label{TSP:con:MCMInitOut}\\
+                \sum_{i \in V} y_{ik}^k &= 1, \quad \forall k \in V \setminus \{1\} \label{TSP:con:MCMElseOut}\\
+                \sum_{j \in V} y_{kj}^k &= 0, \quad \forall k \in V \setminus \{1\} \label{TSP:con:MCMElseIn}\\
+                \sum_{i \in V} y_{ij}^k - \sum_{i \in V} y_{ji}^k &= 0, \quad \forall j, k \in V \setminus \{1\}, j \neq k \label{TSP:con:MCMBalance}
+            \end{align}
+            Constraints (\ref{TSP:con:MCMFlowExist}) only allow flow in an arc which is present. Constraints (\ref{TSP:con:MCMInitIn}) forces exactly one unit of each type of commodity to flow in at node 1. Constraints (\ref{TSP:con:MCMInitOut}) prevent any commodity flow out at node 1.Constraints (\ref{TSP:con:MCMElseOut}), and Constraints (\ref{TSP:con:MCMElseIn}), forces exactly one unit of type $k$ commodity to flow out, and in, at every node except node 1. Constraints (\ref{TSP:con:MCMBalance}) forces balance of all types of commodities at every node except node 1.
+
+            This formulation has $O(n^3)$ constraints, $O(n^2)$ binary variables, and $O(n^3)$ continuous variables.
+
+        \subsection{Shortest Path Formulation}
+            In this section, we are going to introduce another form of formulation with different definition of decision variable and objective function.
+
+            Assuming for a completed graph $G = (V, A)$. Define $x_{ij}^t$ as the following
+            \begin{equation}
+                x_{ij}^t = \begin{cases}
+                                1, \quad \text{If path crosses arc } (i, t) \text{ and } (j, t + 1) \\
+                                0, \quad \text{Otherwise}
+                            \end{cases}, \quad i \in V, j \in V \setminus \{i\}, t = 1, \cdots, n
+            \end{equation}
+
+            \begin{figure}[!h]
+                \centering
+                \includegraphics[width=0.6\textwidth]{../../image/timeStaged.png}
+                \caption{Time-staged graph}
+                \label{fig:timeStaged}
+            \end{figure}
+
+            The objective function will be
+            \begin{equation}
+                \min \quad \sum_{i \in V}\sum_{j \in V\setminus \{i\}} c_{ij} \sum_{t = 1}^n x_{ij}^t
+            \end{equation}
+
+            The constraints are as following
+            \begin{align}
+                \sum_{j \in V \setminus \{1\}} x_{1j}^1 &= 1 \label{TSP:con:SPFStart}\\
+                \sum_{j \in V \setminus \{1, i\}} x_{ij}^2 - x_{1i}^1 &= 0, \quad \forall i \in V \setminus \{1\} \label{TSP:con:SPFFirstLayer}\\
+                \sum_{j \in V \setminus \{1, i\}} x_{ij}^t - \sum_{j \in V \setminus \{1, i\}} x_{ji}^{t - 1} &= 0, \quad \forall i \in V \setminus \{1\}, t \in \{2, \dots, n - 1\} \label{TSP:con:SPFTthLayer}\\
+                x_{i1}^n - \sum_{j \in V \setminus \{1, i\}} x_{ji}^{n - 1} &= 0, \quad \forall i \in V \setminus \{1\} \label{TSP:con:SPFLastLayer}\\
+                \sum_{i \in V \setminus \{1\}} x_{i1}^n &= 1 \label{TSP:con:SPFEnd}\\
+                \sum_{t = 2}^{n - 1}\sum_{j \in V \setminus \{1, i\}} x_{ij}^t + x_{i1}^n & \le 1, \quad \forall i \in V \setminus \{1\} \label{TSP:con:SPFSameType1}
+            \end{align}
+
+            Notice that constraint (\ref{TSP:con:SPFSameType1}) can be replaced by
+            \begin{equation}
+                x_{1i}^1 + \sum_{t = 2}^{n - 1}\sum_{j \in V \setminus \{1, i\}} x_{ji}^t \le 1, \quad \forall i \in V \setminus \{1\} \label{TSP:con:SPFSameType2}
+            \end{equation}
+
+        \subsection{Quadratic Formulation (QAP)}
+            In this section, we are going to go over a TSP formulation are super bad. However, it still has some value for further study.
+
+            The idea is to transform TSP into an assignment problem. Assuming we have $n$ boxes, which represents $n$ steps in the path. Define $x_{ij}$ as 
+            \begin{equation}
+                x_{ij} = \begin{cases}
+                            1, \quad \text{Vertex $i$ is assigned to box $j$}\\
+                            0, \quad \text{Otherwise}
+                        \end{cases}
+            \end{equation}
+
+            The constraints are simple as an assignment problem as following
+            \begin{align}
+                \sum_{j = 1}^n x_{ij} &= 1, \quad \forall i \in V\\
+                \sum_{i \in V}^n x_{ij} &= 1, \quad j = 1, \dots, n
+            \end{align}
+
+            However, the tricky part is in the objective function
+            \begin{equation}
+                \min \quad \sum_{i \in V} \sum_{j \in V \setminus \{i\}} \sum_{k = 1}^{n - 1} c_{ij} x_{ik} x_{j, k + 1} + \sum_{i \in V} \sum_{j \in V \setminus \{i\}} c_{ij}x_{in}x_{j1}
+            \end{equation}
+
+            Notice that the objective function is not linear function, with the multiplications of decision variables. Now we are going to linearize them. The linearized version is as following
+
+            \begin{align}
+                \min \quad & \sum_{i \in V} \sum_{j \in V \setminus \{i\}} \sum_{k = 1}^{n - 1} c_{ij} w_{ij}^k + \sum_{i \in V} \sum_{j \in V \setminus \{i\}} c_{ij}w_{ij}^n\\
+                \text{s.t.} \quad & \sum_{j = 1}^n x_{ij} = 1, \quad \forall i \in V\\
+                                  & \sum_{i \in V}^n x_{ij} = 1, \quad j = 1, \dots, n\\
+                                  & w_{ij}^k \ge x_{ik} + x_{j, k + 1} - 1, \quad i \in V,  j \in V \setminus \{i\}, k = 1, \cdots, n - 1\\
+                                  & w_{ij}^k \ge x_{ik} + x_{j1} - 1, \quad i \in V, j \in V \setminus \{i\}, k = n \\
+                                  & w_{ij}^k \in \{0, 1\}, \quad i \in V, j \in V \setminus \{i\}, k = 1, \dots, n\\
+                                  & x_{ij} \in \{0, 1\}, \quad i \in V, j \in V \setminus \{i\}
+            \end{align}
+
+            We can prove that this is very very bad. The optimal solution of the LP Relaxation for the QAP formulation is as follows
+
+            \begin{align}
+                x_{ij} &= \frac{1}{n}, \quad \forall i, j \in V\\
+                w_{ij}^k &= \frac{2}{n} - 1, \quad \forall i \in V, j \in V \setminus \{i\}, k = 1, 2, \ldots, n
+            \end{align}
+
+            The solution indicates that all decision variables are symmetric in the LP Relaxation, thus, it did not provide any information for branching. In fact, such formulation will search all $O(2^n)$ branches and the lower bound will be difficult to converge.
+    
+    \section{The Held and Karp Lower Bound}
+        In this section, we will solve the Dantzig-Fulkerson-Johnson formulation using Lagrangian Relaxation. Before finally converge, the LR finds an infeasible solution as lower bound. The bound found by this method is also known as Held \& Karp Bound.
+        
+        \subsection{Minimum Spanning Tree}
+            We first introduce the concept of minimum spanning tree by an example. A company wants to build a communication network for their offices. For a link between office $v$ and office $w$, there is a cost $c_{vw}$. If an office is connected to another office, then they are connected to with all its neighbors. Company wants to minimize the cost of communication networks.
+
+            \begin{definition}[Spanning Tree]
+                A subgraph T of G is a \textbf{spanning tree} if it is spanning ($V(T)=V(G)$) and it is a tree.
+            \end{definition}
+
+            \begin{definition}[Minimum Spanning Tree]
+                Given a connected graph graph $G$, and a cost $C_e, \forall e\in E$, find a minimum cost spanning tree of $G$
+            \end{definition}
+
+            The follow are two algorithms that finds the minimum spanning tree on given graph $G$.
+
+            \begin{algorithm}
+                \caption{Kroskal's Algorithm, $O(m \log m)$}
+                \begin{algorithmic}
+                    \Require A connected graph
+                    \Ensure A minimum spanning tree
+                    \State Keep a spanning forest $H=(V, F)$ of $G$, with $F=\emptyset$
+                    \While {$|F| < |V| - 1$}
+                        \State add to $F$ a least-cost edge $e\notin F$ such that $H$ remains a forest.
+                    \EndWhile
+                \end{algorithmic}
+            \end{algorithm}
+
+            \begin{algorithm}
+                \caption{Prim's Algorithm, $O(nm)$}
+                \begin{algorithmic}
+                    \Require A connected graph
+                    \Ensure A minimum spanning tree
+                    \State Keep $H = (V(H), T)$ with $V(H) = \{v\}$, where $r\in V(G)$ and $T=\emptyset$
+                    \While {$|V(T)| < |V|$}
+                        \State Add to $T$ a least-cost edge $e \notin T$ such that $H$ remains a tree.
+                    \EndWhile
+                \end{algorithmic}
+            \end{algorithm}
+
+            \begin{itemize}
+                \item Kroskal start with a forest that contains all vertices, Prim start with a tree that only contain one vertex.
+                \item Kroskal cannot guarantee every step it is a tree but can guarantee it is spanning, Prim can guarantee every step it is a tree but cannot guarantee spanning.
+            \end{itemize}
+
+        \subsection{1-Tree}
+            We first introduce an intuitive lower bound for TSP, which is the Minimum Spanning Tree Lower Bound. As we known, an optimal solution for the TSP is a Hamilton Cycle which enumerated all vertices on the graph. The length of such Hamilton cycle is denoted as $TSP^*$. If we randomly remove one of the edges, e.g., $\{vw\}$, then, the cycle becomes a path, denoted by $TSP - \{vw\}$. In this case, the degree of vertices $v$ and $w$ reduce to 1 while all the other vertices remains the same as 2. By definition, such path $TSP - \{vw\}$ is a spanning tree on graph $G$. Therefore, the minimum spanning tree of graph $G$ defines a lower bound.
+
+            \begin{equation*}
+                MST \le spanning tree = TSP - \{vw\} < TSP^*
+            \end{equation*}
+
+            We can further improve the lower bound by introducing 1-tree. A spanning tree is a tree with no cycle, if the graph has 1 cycle, it is called 1-tree. Notice that a Hamilton Cycle has only 1 cycle, thus, the Hamilton Cycle is an 1-tree as well. Naturally, the length of all edges of any 1-tree is larger than the length of all edges of the minimum spanning tree. The lower bound of TSP is further improved as follows
+
+            \begin{equation*}
+                MST < M1T \le 1-tree \le TSP^*
+            \end{equation*}
+
+            The following algorithm defines an 1-Tree on graph $G$ corresponding to vertex $v$.
+
+            \begin{algorithm}
+                \caption{1-Tree}
+                \begin{algorithmic}
+                    \Require A connected graph
+                    \Ensure A minimum 1-Tree
+                    \State Remove $v$ from the graph
+                    \State Use Kroskal's algorithm or Prim's Algorithm to find the minimum spanning tree of $G \setminus \{v\}$
+                    \State Find the shortest edge induced by $v$ to the rest of graph $G \setminus \{v\}$, denoted by $vu$ and $vw$, add them to the MST
+                    \State \Return 1-Tree
+                \end{algorithmic}
+            \end{algorithm}
+
+            \begin{figure}[!htp]
+                \centering                
+                \subfloat[Remove $v$]{\includegraphics[width=0.27\textwidth]{../../image/1Tree1.png}}\quad
+                \subfloat[Find MST]{\includegraphics[width=0.27\textwidth]{../../image/1Tree2.png}}\quad
+                \subfloat[Add back $v$]{\includegraphics[width=0.27\textwidth]{../../image/1Tree3.png}}
+                \caption{Steps in finding minimum 1-Tree}
+                \label{fig:1tree}
+            \end{figure}
+
+            A M1T is a good lower bound, however, we can still further improve the lower bound by finding 1-trees.
+
+        \subsection{Held and Karp Lower Bound and Lagrangian Relaxation}
+            Notice that in the minimum 1-tree example, vertices have different degrees, some are of degree 1, 2, 3, or more. However, the ``optimal'' 1-tree that we look for, is an 1-tree such that all the vertices are of degree 2. By intuition, if an 1-tree has fewer ``branches'', it's closer to be ``optimal''. That is actually the principle of the Held and Karp Lower Bound.
+
+            We first look at the DFJ formulation for the TSP.
+
+            \begin{align}
+                \min \quad &\sum_{e \in E} \tau_e x_e \label{lr:obj}\\
+                \text{s.t.} \quad & \sum_{e \in \delta(i)} x_e = 2, \quad \forall i \in 1, 2, \ldots, n\label{lr:deg}\\
+                & \sum_{e \in E(S)} x_e \le |S| - 1, \quad \forall S \subset V, 2 \le |S| \le n - 1 \label{lr:subtour}\\
+                & x_e \in \{0, 1\}, \quad \forall e \in E
+            \end{align}
+
+            In the DFJ model, the objective is to sum up all the cost of the edges that are chosen on the TSP path. Constraints (\ref{lr:deg}) is a flow balancing constraint, the index $e\in \delta(i)$ represents all the edges that are induced by vertex $i$. Constraints (\ref{lr:subtour}) is the sub-tour constraint.
+
+            Replace the Constraints (\ref{lr:deg}) by the following
+            \begin{align}
+                \sum_{e \in \delta(i)} x_e &= 2, \quad \forall i \in 1, 2, \ldots, n - 1\\
+                \sum_{e \in E} x_e &= n
+            \end{align}
+
+            We can reformulate the DFJ formulation as follows:
+
+            \begin{align}
+                \min \quad &\sum_{e \in E} \tau_e x_e\\
+                \text{s.t.} \quad & \sum_{e \in \delta(i)} x_e = 2, \quad \forall i \in 1, 2, \ldots, n - 1\label{lr:ndeg}\\
+                &\sum_{e \in E} x_e = n \label{lr:cycle}\\
+                & \sum_{e \in E(S)} x_e \le |S| - 1, \quad \forall S \subset V, 2 \le |S| \le n - 1 \label{lr:nsubtour}\\
+                & x_e \in \{0, 1\}, \quad \forall e \in E
+            \end{align}
+
+            Look closely, Constraints (\ref{lr:cycle}) means, the number of edges in the subgraph should be the same as the number of vertices, so the subgraph has 1 cycle. The Constraints (\ref{lr:nsubtour}) guarantee that the graph is connected. Which means, Constraints (\ref{lr:cycle}) and (\ref{lr:nsubtour}) finds an 1-tree.
+
+            Until now, we can move the Constraints (\ref{lr:ndeg}) to the objective function, and use the Lagrangian Relaxation to solve the problem
+
+            \begin{align}
+                z(\mathbf{u}) = \min \quad & \sum_{e \in E} \tau_e x_e + \sum_{i = 1}^{n - 1}u_i(2 - \sum_{e \in \delta(i)} x_e)\\
+                \text{s.t.} \quad & \mathbf{x} \text{ defines an 1-tree with vertice } n
+            \end{align}
+
+            For the vertex $i$, define $u_i$, the formulation can be further rewritten as
+
+            \begin{align}
+                z(\mathbf{u}) = \min \quad & 2\sum_{i = 1}^{n - 1} u_i + \sum_{e \in \delta(i)} (\tau_e - u_{e^+} - u_{e^-})x_e\\
+                \text{s.t.} \quad & \mathbf{x} \text{ defines an 1-tree with vertice } n
+            \end{align}
+
+        \subsection{Subgradient Descendant Method}
+            Notice that in the previous section, we derived a function $z(\mathbf{u})$ of Lagrangian scalar $u_i$ as the lower bound of the TSP. The solution space of $\mathbf{u}$ is a convex space, in this section, we will search the $\max_{\mathbf{u}} z(\mathbf{u})$ by subgradient descendant method.
+
+            \begin{algorithm}
+                \caption{Subgradient descendant method for Held-Karp Lower Bound}
+                \begin{algorithmic}
+                    \Require A connected graph
+                    \Ensure A lower bound of TSP
+                    \State Initialize, for each vertex $i$, let $u_i = 0$, $d_i = \emptyset$. Define lower bound $L \gets 0$, $L^\prime \gets 0$
+                    \While $|L - L^\prime| \ge \epsilon$
+                        \State Update weights of edges $\tau_{ij} = \tau_{ij} - u_i - u_j$
+                        \State Find the M1T on the graph $G$ with edges updated. Let $D$ be the summation of the length of all edges, let $d_i$ be the degree of vertex $i$ on the M1T.
+                        \State Update $u_i \gets u_i + \lambda_i \frac{UB - D}{\sum_i (d_i - 2)^2}$
+                        \State Update $L^\prime \gets L$
+                        \State Update $L \gets D + 2 \sum_i u_i$
+                    \EndWhile
+                    \State \Return L
+                \end{algorithmic}
+            \end{algorithm}
+
+            In the algorithm, different descendant function may be applied, for example, an easier way for implementation is to update
+            \begin{equation*}
+                u_i \gets u_i + (d_i - 2) \rho^k
+            \end{equation*}
+
+    % \bibliography{literature}
+\end{document}

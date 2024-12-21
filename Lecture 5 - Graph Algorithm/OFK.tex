@@ -1,0 +1,170 @@
+\include{labTemplate}
+\usepackage{subcaption}
+\usepackage{makecell}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{solidNode} = [circle, minimum size = 0.1cm, fill=black]
+    \tikzstyle{link} = [thick, -]
+    \tikzstyle{matchedLink} = [decorate, decoration={snake}]
+    \tikzstyle{circleNode} = [
+        circle, 
+        minimum size = 0.7cm, 
+        text centered, 
+        draw=black, 
+        inner sep=0.1cm
+    ]
+\renewcommand{\docTitle}{Lecture 5 - Graph Algorithms}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+
+        \section{Out-of-Kilter algorithm}
+            This algorithm is a Primal-dual method and is applied to the minimum weight circulation problem.
+
+            For LP optimality conditions we need primal feasibility, dual feasibility and complementary slackness, i.e., KKT conditions. Primal and dual feasibility are obvious so we need to show complementary slackness through following theorem.
+
+            \begin{theorem}
+                Let $x$ be a feasible circulation flow for $(D, l, u, w)$. And suppose there exists a real value vector $\{y_i: i \in V\}$ which we called \textbf{vertex-numbers}. For all edges $e\in A$
+                \begin{align}
+                    y_{h(e)} - y_{t(e)} &> w_e \text{ implies } x_e = u_e\\
+                    y_{h(e)} - y_{t(e)} &< w_e \text{ implies } x_e = l_e
+                \end{align}
+                Then $x$ is optimal to the circulation problem.
+            \end{theorem}
+
+            \begin{proof}
+                For each $e \in A$ define
+                \begin{align}
+                    \gamma_e &= \max\{y_{h(e)} - y_{t(e)} - w_e, 0\} \\
+                    \mu_e &= \max\{w_e - y_{h(e)} + y_{t(e)}, 0\}
+                \end{align}
+                Then
+                \begin{equation}
+                    \gamma_e - \mu_e = y_{h(e)} - y_{t(e)} - w_e
+                \end{equation}
+                Furthermore
+                \begin{align}
+                    &\sum_{e\in A} (\mu_el_e - \gamma_eu_e) \\
+                    &= \sum_{e\in A} (\mu_el_e - \gamma_eu_e) + \sum_{i \in V}y_i(\sum_{h(e) = i} x_e - \sum_{t(e) = i} x_e)\\
+                    &= \sum_{e\in A} (\mu_el_e - \gamma_eu_e + x_e(y_{h(e)} - y_{t(e)}))\\
+                    &= \sum_{e\in A} (\mu_el_e - \gamma_eu_e + x_e(\gamma_e - \mu_e + w_e))\\
+                    &= \sum_{e\in A} (\gamma_e(x_e - u_e) + \mu_e(l_e - x_e) + x_ew_e)\\
+                    &\le \sum_{e\in A} x_ew_e 
+                \end{align}
+                The last inequality will be satisfied as equality iff the first two hold.
+            \end{proof}
+
+            The following is the formulation of circulation problem
+            \begin{align}
+                \text{(P)} \quad \min \quad & wx\\
+                \text{s.t.} \quad & Nx = 0 \quad y \\
+                                  & x \ge l \quad z^l \\
+                                  & -x \le -u \quad z^u\\
+                \text{(D)} \quad \max \quad & lz^l - uz^u \\
+                \text{(s.t.)} \quad & yN^{-1} + z^l-z^u \le w\\
+                                    & y \quad free\\
+                                    &z^l, z^u \ge 0 \\
+                \text{(CS)} \quad & y_{h(e)} - y_{t(e)} > w_e \Rightarrow x_e = u_e\\
+                                  & y_{h(e)} - y_{t(e)} < w_e \Rightarrow x_e = l_e
+            \end{align}
+
+            There is an alternative way of circulation optimality for a circulation problem. We define a \textbf{kilter-diagram} as follows.
+
+            For every edge construct the following:
+            \begin{figure}[!ht]
+                \centering
+                \begin{tikzpicture}
+                    \draw [arrow] (0, 0) -- (0, 3);
+                    \draw [arrow] (0, 0) -- (3, 0);
+                    \draw [link, line width=0.6 mm] (1, -1) -- (1, 1) -- (2, 1) -- (2, 3);
+                    \draw node at (0, 3) [above] {$y_{h(e)} - y_{t(e)}$};
+                    \draw node at (3, 0) [above] {$x_e$};
+                    \draw node at (1, -0.5) [left] {$l_e$};
+                    \draw node at (2, 0) [above] {$u_e$};
+                    \draw node at (0, 1) [left] {$w_e$};
+                \end{tikzpicture}
+            \end{figure}
+
+            For each point $(x_e, y_{h(e)} - y_{t(e)})$ we define a \textbf{kilter-number} $k_e$, be the minimum positive distance change in $x_e$ required to put in on the kilter line.
+            \begin{example}
+                For edge $e: w_e = 2, l_e = 0, u_e = 3$, assume $x_e = 2, y_{h(e)} - y_{t(e)} = 3$, then $k_e = 1$
+            \end{example}
+
+            \begin{figure}[!ht]
+                \centering
+                \begin{tikzpicture}
+                    \draw [arrow] (0, 0) -- (0, 4);
+                    \draw [arrow] (0, 0) -- (4, 0);
+                    \draw [link, line width=0.6 mm] (0, -1) -- (0, 2) -- (3, 2) -- (3, 4);
+                    \draw node at (0, 4) [above] {$y_{h(e)} - y_{t(e)}$};
+                    \draw node at (4, 0) [above] {$x_e$};
+                    \draw node at (0, -0.5) [left] {0};
+                    \draw node at (3, 0) [above] {3};
+                    \draw node at (0, 2) [left] {2};
+                    \fill (2, 3) circle [radius=2 pt];
+                    \draw node at (2, 3) [above, xshift=-0.6 cm] {$(x_e, y_{h(e)} - y_{t(e)})$};
+                    \draw node at (2, 3) [below] {(2, 3)};
+                    \draw [link, dashed] (2, 3) -- (3, 3);
+                \end{tikzpicture}
+            \end{figure}
+
+            \begin{lemma}
+                If for every circulation $x$ and vertex number $y$ we have $\sum_{e \in A} k_e = 0$, then $x$ is optimal.
+            \end{lemma}
+
+            \begin{proof}
+                Since $k_e$ is a nonnegative number, then the only way that $\sum_{e \in A} k_e = 0$ is $k_e = 0, \forall e\in A$, which means $\forall e\in A, l_e \le x_e \le u_e$. Furthermore, the complementary slackness are satisfied.
+            \end{proof}
+
+            General idea of algorithm is as follows. Suppose we are given a circulation $x$ and vertex-numbers $y$ (we do not require feasibility). Usually we pick $x=0, y=0$. If every edge is in kilter-line then we are optimal.
+
+            Otherwise there is at least one edge $e^*$ that is out-of kilter. The algorithm consist of two phases, one called \textbf{flow-change} phase (horizontally), then other \textbf{number-change} phase (vertically).
+
+            In the flow-change phase, we want to find a new circulation for an out-of-kilter edge $e^*$ say $\hat{e}$ such that we reduce the kilter number $k_{e^*}$, without increasing any other kilter number for other edges.
+
+            To do this, denote the edges of $e^*$ to be $s$ and $t$, where such that $k_{e^*}$ will be decreased by increasing the flow from $s$ to $t$ on $e^*$.
+
+            If $e^*=(s, t)$ this will accomplished by increasing $x_{e^*}$ and if $e=(t, s)$ it is accomplished by decreasing $x_{e^*}$. 
+
+            To do this we look for an $(s, t)$-path $p$ of the following edges.
+
+            \begin{itemize}
+                \item If $e$ is forward in $p$, then increasing $x_e$ does not increase $k_e$ and
+                \item If $e$ is reversed in $p$, then decreasing $x_e$ dose not increase $k_e$
+            \end{itemize}
+
+            In terms of kilter diagram, an arc satisfies ``forward'' if it is forward and in left side of kilter line, and it satisfies ``reversed'' if it is reverse and in right side of kilter line.
+
+            Suppose we can not find such a path. From $s$ to $t$, let $x$ be the vertices that can decrease by an augmenting path. Then either we can change the vertex numbers $y$ so that $\sum_{e\in A} k_e$ does not increase but $x$ does, or we can show that problem is infeasible.
+
+            The sketch of Out-of-kilter algorithm is as follows:
+            \begin{itemize}
+                \item \textbf{INPUT} a minimum circulation problem $(D, l, u, w)$ a circulation $x$ and vertex-numbers $y$
+                \item \textbf{OUTPUT} conclusion that $(D, l, u, w)$ is infeasible or an minimum weighted flow.
+                \item Step 1: If every arc is in kilter $(k_e = 0, \forall e\in A)$. Stop with $x$ is optimal. Otherwise let $e^*$ be an out-of-kilter arc. If increasing $x_{e^*}$ decreases $k_{e^*}$ set $s=h(e^*)$ and $t(e^*)$ otherwise set $s=t(e^*)$ and $t=h(e^*)$
+                \item Step 2: If there exists an $(s, t)$ augmenting path $p$ then goto Step 3, otherwise goto Step 4.
+                \item Step 3: Set $y_e = y_{h(e)} - y_{t(e)}, e\in A$
+                $\begin{cases}
+                    \Delta_1 &= \min\{u_e - x_e: e \text{ is forward and } y_e \ge w_e\}\\
+                    \Delta_2 &= \min\{l_e - x_e: e \text{ is forward and } y_e < w_e\}\\
+                    \Delta_3 &= \min\{x_e - l_e: e \text{ is reverse and } y_e \le w_e\}\\
+                    \Delta_4 &= \min\{x_e - u_e: e \text{ is reverse and } y_e > w_e\}
+                \end{cases}$\\
+                and $\Delta = \min\{\Delta_i, i = 1, 2, 3, 4\}$. Increase $x_e$ by $\Delta$ on each forward arc in $p$, decrease $x_e$ by $\Delta$ on each reverse arc in $p$.\\
+                If $e^* = (s, t)$ decrease $x_{e^*}$ by $\Delta$, otherwise increase $x_{e^*}$ by $\Delta$\\
+                If $k_{e^*} > 0$ goto Step 2. otherwise goto Step 1.
+                \item Step 4: Let $X$ be the set of vertices reachable from $s$ by augmenting paths, then $t \notin X$, if every arc $e$ with $h(e) \in X$ has $x_e \le l_e$ and every arc $e$ with $t(e) \in X$ has $x_e \ge u_e$, and at least one of the above inequality is strict, then Stop with problem infeasible. Otherwise set
+                    $\delta_1 = \min\{w_e - y_e: t(e) \in X, y_e < w_e, x_e \le u_e \neq l_e\}$
+                    $\delta_2 = \min\{y_e - w_e: h(e) \in X, y_e > w_e, x_e \ge u_e \neq l_e\}$
+                    $\delta = \min\{\delta_1, \delta_2\}$
+                Set $y_i = y_i + \delta$ for $i \notin X$. If $k_{e^*} > 0$, goto Step 2, otherwise goto Step 1.
+            \end{itemize}                
+
+            Out-of-kilter takes $O(|E||V|K)$ where $K = \sum_{e\in A} k_e$. However, there is an algorithm called \textbf{scaling algorithm} that uses out-of-kilter as subroutine that runs in $O(R|E|^2|V|)$ where $R = \lceil \max\{\log_2 u_e: e\in A\}\rceil$
+\end{document}

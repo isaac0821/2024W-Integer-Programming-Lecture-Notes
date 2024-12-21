@@ -1,0 +1,237 @@
+\include{labTemplate}
+\usepackage{makecell}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+
+\renewcommand{\docTitle}{Lecture 8 - Benders Decomposition}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+    \titleSec
+
+    \begin{center}
+        \textit{``Learning from one's mistakes.''}
+    \end{center}
+
+    \section{A Uncapacitated Facilities Location Problem}
+        \subsection{Formulation}
+            Consider the following facility location problem, where $m$ is the number of potential facilities, $n$ is the number of customers, and $\mathbb{Y}$ is the set of feasible plans of facility location plans, where $\mathbf{y} \in \mathbb{Y} \subseteq \{0, 1\}^m$. $c_{ij}$ is the cost for customer $i$ to be assigned to facility $j$, $d_j$ is the cost for opening facility $j$. The formulation is as following
+            
+            \begin{table}[!htp]
+                \centering
+                \caption{Sets and Parameters}
+                \begin{tabular}{c|p{8cm}}
+                    \hline
+                    \textbf{Notations} & \textbf{Description} \\
+                    \hline
+                    $m$ & Number of potential facilities\\
+                    $n$ & Number of customers\\
+                    $F = \{1, 2, \ldots, m\}$ & Set of potential facilities \\
+                    $C = \{1, 2, \ldots, n\}$ & Set of customers\\
+                    $d_j$ & The cost of constructing facility $j$, where $j \in $.\\
+                    $c_{ij}$& The cost for customer $i$ to receive service from facility $j$, where $i \in C$ and $j \in F$.\\
+                    \hline
+                \end{tabular}
+            \end{table}
+
+            \begin{table}[!htp]
+                \centering
+                \caption{Decision variables}
+                \begin{tabular}{c|p{8cm}}
+                    \hline
+                    \textbf{Notations} & \textbf{Description}\\
+                    \hline
+                    $y_j$ & Binary variables, takes 1 if facility $j$ is decided to be constructed, where $j \in F$.\\
+                    $x_{ij}$ & Continuous variables, the percentage of demand for customer $i$ to be fulfilled by facilities $j$, where $i \in C$ and $j \in F$.\\
+                    \hline
+                \end{tabular}
+            \end{table}
+
+            \begin{align}
+                \text{(FLP)} \quad \min \quad & \sum_{i = 1}^n \sum_{j = 1}^m c_{ij} x_{ij} + \sum_{j = 1}^m d_j y_j \nonumber\\
+                \text{s.t.} \quad &\sum_{j = 1}^m x_{ij} \ge 1, \quad \forall i \in C \label{cons:demand}\\
+                    &x_{ij} \le y_j, \quad \forall i \in C, j \in F \label{cons:open}\\
+                    &x_{ij} \ge 0, \quad \forall i \in C, j \in F \label{cons:nonnegX}\\
+                    &y_{j} \in \{0, 1\}, \quad \forall j \in F \label{cons:nonnegY}
+            \end{align}
+
+            In the formulation (FLP), 
+            \begin{itemize}
+                \item Constraints (\ref{cons:demand}) indicate that for each customer $i$, its request needs to be fulfilled.
+                \item Constraints (\ref{cons:open}) indicate that a facility $j$ can only be able to serve customer $i$ if the facility is opened.
+                \item Constraints (\ref{cons:nonnegX}) is the nonnegative constraints for $\mathbf{x}$.
+                \item Constraints (\ref{cons:nonnegY}) defines $\mathbf{y}$ as binary variables.
+            \end{itemize}
+
+        \subsection{Solution Approach}
+            If $y$ are fixed, i.e., $y = \bar{y} \in \mathbb{Y}$, the rest of the formulation will become an LP model with $x_{ij}$ as the nonnegative decision variables. 
+
+            \begin{align*}
+                (\text{Sub}) \quad \min \quad & \sum_{i = 1}^n \sum_{j = 1}^m c_{ij} x_{ij} + \sum_{j = 1}^m d_j \bar{y_j}\\
+                \text{s.t.} \quad &\sum_{j = 1}^m x_{ij} \ge 1, \quad \forall i \in C\\
+                    &x_{ij} \le \bar{y_j}, \quad \forall i \in C, j \in F\\
+                    &x_{ij} \ge 0, \quad \forall i \in C, j \in F
+            \end{align*}
+
+            If we take the dual of this new LP, we get
+            \begin{align*}
+                \text{(Dual-Sub)} \quad \max \quad & \sum_{i = 1}^n (\lambda_i - \sum_{j = 1}^m \bar{y}_j \pi_{ij}) + \sum_{j = 1}^m d_j \bar{y}_j \\
+                \text{s.t.} \quad & \lambda_i - \pi_{ij} \le c_{ij} \quad \forall i \in C, j \in F\\
+                & \lambda_i \ge 0\quad \forall i \in C\\
+                & \pi_{ij} \ge 0 \quad \forall i \in C, j \in F
+            \end{align*}
+
+            Now get rid of the constant in the objective function of (Sub) and (Dual-Sub), which is $\sum_{j = 1}^m d_j \bar{\mathbf{y}}$, we can then define
+
+            \begin{align*}
+                \eta(\bar{\mathbf{y}}) &= \min_\mathbf{x} \{\sum_{i = 1}^n \sum_{j = 1}^m c_{ij} x_{ij} | \sum_{j = 1}^m x_{ij} \ge 1, x_{ij} \le \bar{y_j}, x_{ij} \ge 0, i \in C, j \in F\}\\
+                &= \max_\mathbf{\pi} \{\sum_{i=1}^n (\lambda_i - \sum_{j = 1}^m \bar{y_j} \pi_{ij})|\lambda_i - \pi_{ij} \le c_{ij}, \lambda_i \ge 0, \pi_{ij} \ge 0 i \in C, j \in F\}
+            \end{align*}
+
+            The (FLP) model can be equivalently rewritten as follows
+
+            \begin{align*}
+                \text{(FLP)} \quad & = \min_{\bar{y} \in \mathbb{Y}}\{\sum_{j = 1}^m d_j \bar{y}_j + \eta(\bar{\mathbf{y}})\}\\
+                & = \min_{\bar{y} \in \mathbb{Y}} \{\sum_{j = 1}^m d_j \bar{y}_j + \max_\mathbf{\pi} \{\sum_{i=1}^n (\lambda_i - \sum_{j = 1}^m \bar{y_j} \pi_{ij})|\lambda_i - \pi_{ij} \le c_{ij}, \lambda_i \ge 0, \pi_{ij} \ge 0 i \in C, j \in F\}\}
+            \end{align*}
+
+            Notice that for index $i$, the customer, there is no constraint among them, which is logically to be true since in reality customers are not related to each other. Therefore, the due of subproblem can be further decomposed by $i$, for each $i$,
+
+            \begin{align*}
+                \text{(Dual-Sub-$i$)} \quad \eta_i(\bar{\mathbf{y}}) = \max \quad & \lambda_i - \sum_{j = 1}^m \bar{y}_j \pi_{ij}\\
+                \text{s.t.} \quad & \lambda_i - \pi_{ij} \le c_{ij}, \quad \forall j \in F\\
+                & \lambda_i \ge 0, \quad \forall i \in C\\
+                & \pi_{ij} \ge 0, \quad \forall i \in C, j \in F
+            \end{align*}
+
+            The (Dual-Sub-$i$) can easily be solved as following
+            \begin{align*}
+                &\bar{\lambda_i} = \min \{c_{ij}, j \in \mathbf{O}\}\\
+                &\begin{cases}
+                    \bar{\pi_{ij}} = 0, \quad j \in \mathbf{O}\\
+                    \bar{\pi_{ij}} = \max \{0, \bar{\lambda_i} - c_{ij}\}, \quad j \in \mathbf{C}
+                \end{cases}
+            \end{align*}
+
+            In which $\mathbf{O}$ is the set of indices $j$ where $\bar{y}_j = 1$ and $\mathbf{C}$ is the set of indices $j$ where $\bar{y}_j = 0$. The optimal value of dual variables can be interpreted in terms of facilities location problem. $\bar{\lambda_i}$ is the cost of serving customer $i$ when $y = \bar{y}$ and $\bar{\pi_{ij}}$ is the reduction in the cost of serving customer $i$ when facility $j$ is opened and $y_i = \bar{y_i}$.
+
+            After solving the (Dual-Sub-$i$), we can find the objective function value as well as the dual variable values for (Dual-Sub). 
+
+            The restricted master problem initialized with no additional constraints, as follows
+
+            \begin{align*}
+                \text{(RMP)} \quad \min \quad & \sum_{j = 1}^m d_j y_j\\
+                \text{s.t.} \quad & \mathbf{y} \in \mathbb{Y}
+            \end{align*}
+
+            There is only one case where the (Dual-Sub) problem will be unbounded, which would be when $\bar{\mathbf{y}} = \mathbf{0}$. In that case, a feasibility cut will be added into the master problem, as follows
+            \begin{equation}
+                0 \ge \sum_{i=1}^n (\bar{\lambda_i} - \sum_{j = 1}^m y_j \bar{\pi_{ij}})
+            \end{equation}
+            For other cases, as long as there is at least one facility opened, the Subproblem is always feasible, therefore, a feasibility cut will be added into the master problem, as follows
+            \begin{equation*}
+                \eta \ge \sum_{i=1}^n (\bar{\lambda_i} - \sum_{j = 1}^m y_j \bar{\pi_{ij}})
+            \end{equation*}
+
+            The iteration continues until no more cut can be added into the master problem and we derive the optimal solutions.
+
+    \section{Benders Decomposition}
+        \subsection{How Benders Decomposition Works?}
+            Benders Decomposition is usually applied for those problems that are easy to solve after fixing some of the variables. The general idea is to divide the problem into a master problem containing all complicated variables and subproblems containing simple variables. For example, given an MILP model as follows
+            \begin{align*}
+                \text{(MILP)} \quad \min \quad & f^\top y + c^\top x \\
+                \text{s.t.} \quad & A y \ge b \\
+                & By + Dx \ge d\\
+                & x \ge 0\\
+                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+            \end{align*}
+
+            In the formulation, decision variables $x$ are separable, thus, for a given $\bar{y} \in \mathbb{Y}$, a subproblem is defined a follows
+            \begin{align*}
+                \text{(Sub)} \quad \min \quad & f^\top \bar{y} + c^\top x\\
+                \text{s.t.} \quad & B \bar{y} + Dx \ge d\\
+                & x \ge 0
+            \end{align*}
+
+            In which $f^\top \bar{y}$ is a constant for given $\bar{y}$, rewrite (Sub) as follows
+
+            \begin{align*}
+                \text{(Sub)} \quad \eta(\bar{y}) = \min_x \{c^\top x | D x \ge d - B \bar{y}, x \ge 0\}
+            \end{align*}
+
+            Notice that $\bar{y}$ remains in the constraints of (Sub), every time when a new $\bar{y}$ is given, the feasible region changes, which makes it difficult to keep track of the model. To facilitate our analysis, we take the dual of (Sub), which maintains the same feasible region every time when a new $\bar{y}$ is given. The dual of the subproblem is defined as follows
+
+            \begin{align*}
+                \text{(Dual-Sub)} \quad \eta(\bar{y}) = \max_{\pi} \{\pi^\top (d - B\bar{y})| \pi^\top D \le c, \pi \ge 0\}
+            \end{align*}
+
+            Then, the equivalent formulation of the original problem is
+            \begin{align*}
+                \text{(Master)} \quad \min \quad & f^\top y + \eta\\
+                & Ay \ge b\\
+                & \eta \ge \max_\pi \{\pi^\top (d - By) | \pi^\top D \le c, \pi \ge 0\}\\
+                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+            \end{align*}
+
+            Apply the Minkowski-Weyl Theorem to the (Dual-Sub), the feasible region $\{\pi|\pi^\top D \le c, \pi \ge 0\}$ can be represented by a set of extreme points (e.p.) and a set of extreme directions (e.d.). Thus, let
+
+            \begin{itemize}
+                \item $\pi_e \in V$ be the set of all extreme points, and 
+                \item $\pi_d \in D$ be the set of all extreme directions
+            \end{itemize}
+
+            The original problem can be further rewritten as follows
+            \begin{align*}
+                \text{(Master)} \quad \min \quad & f^\top y + \eta\\
+                & Ay \ge b\\
+                & \eta \ge \pi_e^\top (d - By), \quad \forall \pi_e \in V\\
+                & 0 \ge \pi_d^\top (d - By), \quad \forall \pi_d \in D\\
+                & \eta \ge 0\\
+                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+            \end{align*}
+
+            In which, $\eta \ge \pi_e^\top (d - By)$ are referred as optimality cuts, and $0 \ge \pi_d^\top (d - By)$ are referred as feasibility cuts. However, the set $V$ and $D$ are exponentially large, it is intractable if we have all feasibility cuts and optimality cuts added into the model. To reduce the computational burden, a Branch-and-Cut scheme algorithm framework is more widely implemented by researchers.
+
+            Define the initial restricted master problem which only contains the integer variables $\mathbf{y}$ as follows
+
+            \begin{align*}
+                \text{(RMP)} \quad \min \quad &f^\top y + \eta\\
+                & Ay \ge b \\
+                & \eta \ge 0 \\
+                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+            \end{align*}
+
+            Each iteration, an optimized $\bar{y}$ for the (RMP) will be given to the subproblem, which will create a (or multiple) optimality cut(s) or feasibility cut(s). Those cuts will be added into the model in a lazy manner. Each time when an optimality cut is found and added, the lower bound of the master problem will be lifted, otherwise, if a feasibility cut is found and added, the upper bound will be updated. The iteration terminates when the lower bound meet with the upper bound within an acceptable error.
+
+        \subsection{*Is Benders Decomposition a Good Method? Why?}
+            Every one talks about Benders decomposition, however, not so many people actually use it - due to its slow-convergence reputation. The iterative solution of the master problem - which is an Integer Programming Problem - and the subproblem is the a major bottleneck. In particular, the master problem usually have a messy structure, and to make things worse, each iteration the master problem (or it is actually the restricted master problem) is growing in size as the optimality cuts and feasibility cuts being added into the model.
+
+            Here are some potential ways to improve the run time. For the master problem, try
+            \begin{itemize}
+                \item $\epsilon$-optimality
+                \item Heuristics
+                \item Constraint Programming
+                \item Column generation
+                \item Single search tree
+                \item Cut removal
+                \item Cut selection
+            \end{itemize}
+
+            For the subproblem, try
+            \begin{itemize}
+                \item Approximation
+                \item Column generation
+                \item Specialized methods
+                \item Re-optimization techniques
+                \item Parallelism
+            \end{itemize}
+
+
+    % \bibliography{literature}
+\end{document}

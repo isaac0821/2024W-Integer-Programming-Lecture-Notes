@@ -1,0 +1,334 @@
+\include{labTemplate}
+\usepackage{makecell}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+
+\renewcommand{\docTitle}{Lecture 7 - Vehicle Routing Problem with Time Windows\\and Column Generation}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+    \titleSec
+
+    \begin{center}
+        \textit{``Stepping bravely into the unknown.''}
+    \end{center}
+
+    \section{Fundamental Idea of the Column Generation}
+        We first introduce an intuitive approach based on the Revised Simplex Method. Recall the Minkowski-Weyl Theorem (we've learnt in the Benders' Decomposition lecture)
+
+        \begin{theorem}[Minkowski-Weyl Theorem]
+            Let $P = \{x \in \mathbb{R}^n | Ax \le b\}$ be a polyhedron with extreme points $V(P) = \{\mathbf{v}_1, \mathbf{v}_2, \cdots, \mathbf{v}_{|V|}\}$ and extreme directions $R(P) = \{\mathbf{r}_1, \mathbf{r}_2, \cdots, \mathbf{r}_{|R|}\}$, then
+            \begin{align*}
+                P = \{x \in \mathbb{R}^n |& x = \sum_{j = 1}^{|V|} \lambda_j \mathbf{v}_j + \sum_{j = 1}^{|R|} \mu_j \mathbf{r}_j \\
+                & \sum_{j = 1}^{|V|} \lambda_j = 1, \lambda_j \ge 0, \quad \forall j = 1, 2, \cdots, |V| \\
+                & \mu_j \ge 0, \quad \forall j = 1, 2, \cdots, |R|\}
+            \end{align*}
+        \end{theorem}
+
+        With out lost of generality, a (bounded) linear problem model can be formulated as follows
+
+        \begin{align*}
+            \text{(MP)} \quad  z_{MP}^* = \min \quad & \sum_{j \in J} c_j \lambda_j\\
+            \text{s.t.} \quad & \sum_{j \in J} \mathbf{a}_j \lambda_j \ge \mathbf{b} \quad [\mathbf{\pi}]\\
+            &\lambda_j \ge 0, \quad \forall j \in J
+        \end{align*}
+
+        Where each $\lambda_j$ represents an extreme point of the polyhedron. We call this formulation the master problem (MP). The Revise Simplex Method allows us to solve the LP with a \textbf{large} $|J|$, which is, in each iteration add one more nonbasic variable with negative reduce cost into the formulation. Since we do not need to consider all variables in the beginning, we can start with solving a restricted version of the master problem with only a subset of $J$ (in fact, we can start the iteration with a $B^{-1}$, which is any basic feasible solution). That is
+
+        \begin{align*}
+            \text{(RMP)} \quad  z_{RMP}^* = \min \quad & \sum_{j \in J^\prime} c_j \lambda_j\\
+            \text{s.t.} \quad & \sum_{j \in J^\prime} \mathbf{a}_j \lambda_j \ge \mathbf{b} \quad [\mathbf{\pi}]\\
+            &\lambda_j \ge 0, \quad \forall j \in J^\prime \subset J
+        \end{align*}
+
+        We call this formulation the restricted master problem (RMP). In the RMP, we have less choices than the MP, therefore, as a minimization problem, 
+
+        \begin{equation*}
+            z_{RMP}^* \ge z_{MP}^*
+        \end{equation*}
+
+        provides an upper bound for MP. In each iteration, a new variable - column - is introduced into the formulation, thus, this approach is called the Column Generation.
+
+        \begin{algorithm}[!htp]
+            \centering
+            \caption{Column generation with explicit pricing}
+            \begin{algorithmic}
+                \State Initialize with a set $J^\prime \subseteq J$ of variables
+                \Repeat
+                    \State Solve RMP to optimality, obtain $\lambda$ and $\pi$
+                    \State Calculate $\bar{c}_j = z_j - c_j = \mathbf{\pi^\top a_j} - c_j, \forall j \in J$
+                    \If {$\exists \lambda_{j^*}$ with $z_{j^*} - c_{j^*} < 0$}
+                        \State $J^\prime \gets J^\prime \cup \{j^*\}$
+                    \EndIf
+                \Until {$\forall \lambda_j, j \in J, z_j - c_j \ge 0$}
+            \end{algorithmic}
+        \end{algorithm}
+        
+        Notice that if $|J|$ is \textbf{huge}, it will be just too costly to calculate the reduce cost for \textit{every} nonbasic variable, sometimes (in fact, most of the times) we are not even able to enumerate all nonbasic variables, as the size of $J$ is usually exponentially large. Thus, an optimization problem is introduced to find the least-reduce-cost nonbasic variable, to replace the explicit pricing of all nonbasic variables, we call it the \textit{pricing subproblem}. The updated Column Generation algorithm is as follows
+
+        \begin{algorithm}[!htp]
+            \centering
+            \caption{Column generation with pricing subproblem}
+            \begin{algorithmic}
+                \State Initialize with a set $J^\prime \subseteq J$ of variables
+                \Repeat
+                    \State Solve RMP to optimality, obtain $\lambda$ and $\pi$
+                    \State Solve $\bar{c}_{j^*} = \min \{z_j - c_j = \mathbf{\pi^\top a_j} - c_j, \forall j \in J\}$
+                    \If {$\bar{c}_{j^*} < 0$}
+                        \State $J^\prime \gets J^\prime \cup \{j^*\}$
+                    \EndIf
+                \Until {$\bar{c}_{j^*} \ge 0$}
+            \end{algorithmic}
+        \end{algorithm}
+
+        Takeaway: explicit enumeration of all patterns is totally out of the question!! The difficulty lies in defining the pricing problem.
+
+    \section{The Dantzig-Wolfe Reformulation}
+        The previous section does not distinguish the ``easy'' part and the ``difficult'' part of the constraints, however, in real problems, some constraints might be easier to dealt with, while others are more complicated. We can equivalently reformulate the LP model as
+
+        \begin{align*}
+            (LP) \quad \min \quad & \mathbf{c^\top x}\\
+            \text{s.t.} \quad & \mathbf{Ax \ge b} \quad \text{(``difficult'' constraints)}\\
+            & \mathbf{Dx \ge d} \quad \text{(``easy'' constraints)} \\
+            & \mathbf{x \ge 0}
+        \end{align*}
+
+        In which, $\mathbf{Dx \ge d}$ are the constraints we know how to deal with, and $\mathbf{Ax \ge b}$ are the rest of constraints (that we do not like). Recall the Minkowski-Weyl Theorem again. For those ``easy'' constraints, i.e., the polyhedron $X = \{\mathbf{x \ge 0} | \mathbf{Dx \ge d}\}$, can be represented by a set of extreme points $V = \{\mathbf{v_1}, \mathbf{v_2}, \cdots, \mathbf{v_{|V|}}\}$ and a set of extreme rays $R = \{\mathbf{r_1}, \mathbf{r_2}, \cdots, \mathbf{r_{|R|}}\}$. Replace the $\mathbf{Dx \ge d}$ constraints with $V$ and $R$, the origin (LP) model can be reformulated by substitution of $\mathbf{Dx \ge d}$, as follows
+
+        \begin{align*}
+            (LP) \quad \min \quad & \mathbf{c^\top (\sum_{v \in V} \lambda_v \mathbf{x_v} + \sum_{r \in R}\lambda_r \mathbf{x_r})} \\
+            \text{s.t.} \quad & \mathbf{A} (\sum_{v \in V} \lambda_v \mathbf{x_v} + \sum_{r \in R}\lambda_r \mathbf{x_r}) \ge \mathbf{b} \\
+            & \sum_{v \in V} \lambda_v = 1\\
+            & \lambda_v \ge 0 \quad \forall v \in V\\
+            & \lambda_r \ge 0 \quad \forall r \in R
+        \end{align*}
+
+        For each $x_v$ and $x_r$, define
+
+        \begin{align*}
+            c_v &= \mathbf{c^\top x_v}, \forall v \in V \\
+            c_r &= \mathbf{c^\top x_r}, \forall r \in R\\
+            a_v &= \mathbf{A x_v},  \forall v\in V\\
+            a_r &= \mathbf{A x_r}, \forall r \in R
+        \end{align*}
+
+        The (LP) model is reformulated as the master problem (MP)
+
+        \begin{align*}
+            \text{(MP)} \quad z_{MP}^* = \min \quad & \sum_{v \in V} c_v \lambda_v + \sum_{r \in R} c_r \lambda_r\\
+            \text{s.t.} \quad & \sum_{v \in V} a_v \lambda_v + \sum_{r \in R} a_r \lambda_r \ge \mathbf{b} \quad \text{[$\mathbf{\pi}$]}\\
+            & \sum_{v \in V} \lambda_v = 1 \quad \text{[$\mathbf{\pi}_0]$}\\
+            & \lambda_v \ge 0 \quad \forall v \in V\\
+            & \lambda_r \ge 0 \quad \forall r \in R
+        \end{align*}
+
+        There are two cases for reduce cost calculation:
+        \begin{itemize}
+            \item for $\lambda_v, v \in V$
+            \begin{equation*}
+                \bar{c}_v = c_v - \begin{bmatrix}\mathbf{\pi}^\top & \pi_0\end{bmatrix} \begin{bmatrix}\mathbf{a_v} \\ 1\end{bmatrix} = c_v - \mathbf{\pi}^\top \mathbf{a_v} - \pi_0
+            \end{equation*}
+            \item for $\lambda_r, r \in R$
+            \begin{equation*}
+                \bar{c}_r = c_r - \begin{bmatrix}\mathbf{\pi}^\top & \pi_0\end{bmatrix}\begin{bmatrix}\mathbf{a_r} \\ 0\end{bmatrix} = c_r - \mathbf{\pi}^\top \mathbf{a}_r
+            \end{equation*}
+        \end{itemize}
+
+        The smallest reduce cost is derived by $\bar{c}^* = \min \{\min_{v \in V}\{\bar{c}_v\}, \min_{r \in R} \{\bar{c}_r\}\}$, which is the so called Dantzig-Wolfe pricing problem.
+
+        \begin{equation*}
+            z_{PP}^* = \min_{j \in V \cup R} c_j - \mathbf{\pi}^\top \mathbf{a}_j
+        \end{equation*}
+
+        In this formulation, both extreme points and extreme directions are considered. Since $\pi_0$ is a constant, we can ignore it as it is in the objective function.
+
+        Replace the decision variables back to the origin ones in the Dantzig-Wolfe pricing problem. 
+
+        \begin{align*}
+            z_{PP}^* &= \min_{j \in V \cup R} c_j - \mathbf{\pi}^\top \mathbf{a}_j\\
+            & = \min_{j \in V \cup R} \mathbf{c^\top x}_j - \mathbf{\pi^\top A x}_j\\
+        \end{align*}
+
+        which is
+
+        \begin{align*}
+            \min \quad & (\mathbf{c^\top - \pi^\top A})\mathbf{x} \quad \text{(dual of ``difficult'' constraints)}\\
+            \text{s.t.} \quad & \mathbf{Dx \ge d} \quad \text{(``easy'' constraints)}\\
+            & \mathbf{x \ge 0}
+        \end{align*}
+
+        Each time when a DW pricing problem is solved, one of the following three cases will happen
+
+        \begin{itemize}
+            \item $z_{PP}^* = -\infty$. An extreme ray is identified, add $\lambda_{r^*}$ to the RMP with cost $\mathbf{c^\top x_{r^*}}$ and column coefficient $\begin{bmatrix}\mathbf{Ax_{r*}} \\ 0\end{bmatrix}$
+            \item $-\infty < z_{PP}^* - \pi_0 < 0$. An extreme point is identified, add $\lambda_{v^*}$ to the RMP with cost $\mathbf{c^\top x_{v^*}}$ and column coefficient $\begin{bmatrix}\mathbf{Ax_{v*}} \\ 1\end{bmatrix}$
+            \item $0 \le z_{PP}^* - \pi_0$. STOP, $V \cup R = \emptyset$
+        \end{itemize}
+
+    % \section{Stepping toward Integer Programming}
+    %     Although it looks promising, the DW decomposition is not very efficient for LPs. In fact, commercial solvers such as Gurobi does not even offer DW decomposition method for LP. However, the DW decomposition is powerful for IPs.
+
+    %     Consider an IP version of the problem 
+
+    %     \begin{align*}
+    %         (IP) \quad \min \quad & \mathbf{c^\top x}\\
+    %         \text{s.t.} \quad & \mathbf{Ax \ge b} \quad \text{(``difficult'' constraints)}\\
+    %         & \mathbf{Dx \ge d} \quad \text{(``easy'' constraints)} \\
+    %         & \mathbf{x \in \mathbb{Z}_+}
+    %     \end{align*}
+
+    %     using the similar steps in the previous section, the pricing subproblem is reformulated as
+
+    %     \begin{align*}
+    %         \min \quad & (\mathbf{c^\top - \pi^\top A})\mathbf{x} \quad \text{(dual of ``difficult'' constraints)}\\
+    %         \text{s.t.} \quad & \mathbf{Dx \ge d} \quad \text{(``easy'' constraints)}\\
+    %         & \mathbf{x \in \mathbb{Z}_+}
+    %     \end{align*}
+
+    %     Column generation relies on fast computation over $\{x \in \mathbb{Z}^n | \mathbf{Dx \ge d}\}$. So, for choosing $\mathbf{Dx \ge d}$, it should be 
+
+    %     \begin{itemize}
+    %         \item describe as a structure which we can easily optimize - preferably by a heuristic approach. 
+    %         \item can improve the dual bound well (the intersection between the polyhedron of the master problem and the price problem should be as small as possible)
+    %     \end{itemize}
+        
+    \section{Vehicle Routing Problem with Time Windows}
+        Consider a fleet of vehicles $V$, a set of customers $C$, and a directed graph $G = (C\cup\{0\}\cup\{|C| + 1\}, N)$. (0 as the starting depot and $|C| + 1$ as a duplicate of depot for vehicles to return to). The cost of each arc is $c_{ij}$ and the travel time is $t_{ij}$. Each vehicle has a capacity of $q$ and each customer $i$ has a demand of $d_i$. Each customer is associated with a time window $[a_i, b_i]$.
+
+        Let $x_{ijk}$ be a binary decision variable, where
+        \begin{align*}
+            x_{ijk} = \begin{cases}
+                1, \quad \text{if vehicle $k$ drives directly from vertex $i$ to $j$}\\
+                0, \quad \text{Otherwise}
+            \end{cases}
+        \end{align*}
+        and the decision variable $s_{ik}$ is defined for each vertex $i$ and vehicle $k$, it denotes the time vehicle $k$ starts to serve customer $i$. The MILP formulation for VRPTW is described as follows
+
+        \begin{align*}
+            \min \quad & \sum_{k = 1}^{|V|}\sum_{i = 0}^{|C|}\sum_{j = 1}^{|C| + 1} c_{ij} x_{ijk}\\
+            \text{s.t.} \quad & \sum_{k = 1}^{|V|}\sum_{j = 1}^{|C| + 1} x_{ijk} = 1, \quad \forall i \in C \quad \text{(Coupling constraints, no $k \in V$)}\\
+            & \sum_{i = 1}^{|C|} d_i \sum_{j = 1}^{|C| + 1} x_{ijk} \le q, \quad \forall k \in V \\
+            & \sum_{j = 1}^{|C| + 1} x_{0jk} = 1, \quad \forall k \in V\\
+            & \sum_{i = 0}^{|C|} x_{ihk} = \sum_{j = 1}^{|C| + 1} x_{hjk} \quad \forall h \in C, k \in V\\
+            & \sum_{i = 0}^{|C|} x_{i, |C|+1, k} = 1, \quad \forall k \in V\\
+            & s_{ik} + t_{ij} - M_{ij} (1 - x_{ijk}) \le s_{jk}, \quad \forall i \in C \cup \{0\}, j \in C \cup \{|C| + 1\}, k \in V\\
+            & a_i \le s_{ik} \le b_i, \quad \forall i \in C \cup \{0\} \cup \{|C| + 1\}, k \in V\\
+            & x_{ijk} \in \{0, 1\}, \quad \forall i \in C \cup \{0\} \cup \{|C| + 1\}, k \in V
+        \end{align*}
+
+        Now, the question is, who are the ``difficult'' constraints? Notice that there is only one set of coupling constraints ($\sum_{k = 1}^{|V|}\sum_{j = 1}^{|C| + 1} x_{ijk} = 1$), and the remaining constraints are dealing with each vehicle separately. (They all have $\forall k \in V$), therefore, for sure, that coupling constraints should remain in the master problem. There are two different approaches to separate constraints.
+
+        \begin{itemize}
+            \item Approach 1: Keep the coupling constraints and capacity constraints ($\sum_{i = 1}^{|C|} d_i \sum_{j = 1}^{|C| + 1} x_{ijk} \le q$) in the master problem. The master problem is a generalized assignment problem, while the sub problem becomes a Shortest Path Problem with Time Windows (SPPTW).
+            \item Approach 2: Keep the coupling constraints in the master problem. The master problem is a set partitioning problem and the subproblem becomes a Shortest Path Problem with Time Windows and Capacity Constraints (SPPTWCC) or more specifically, the Elementary Shortest Path Problem with Time Windows and Capacity Constraints (ESPPTWCC). 
+        \end{itemize}
+
+        For the set partitioning model, the restricted master problem is defined as follows
+
+        \begin{align*}
+            \text{(RMP)} \quad \min \quad & \sum_{r \in R^\prime} c_r y_r\\
+            \text{s.t.} \quad & \sum_{r \in R^\prime} a_{ir} y_r = 1, \quad \forall i \in C \quad \text{[$\mathbf{\pi}$]}\\
+            & -\sum_{r\in R^\prime} y_r \ge -K  \quad \text{[$\mathbf{\pi}_0$]} \\
+            & y_r \ge 0, \quad \forall r \in R^\prime \quad \text{(exponential number of $r$s)}
+        \end{align*}
+
+        For each feasible route $r$ (an extreme point), $c_r$ is the length of route $r$, and $a_{ir}$ is the 0-1 parameter that take 1 if vertex $i$ is visited by route $r$. Let $w_{ij}$ be binary variables which takes 1 if the sub-path go direct from vertex $i$ to $j$. Then,
+
+        \begin{align*}
+            c_r &= \sum_{(i, j) \in E} c_{ij} w_{ij} \\
+            a_{ir} &= \sum_{(i, j) \in E} w_{ij}
+        \end{align*}
+
+        The pricing subproblem is defined as follows,
+
+        \begin{align*}
+            \text{(PP)} \quad \min \quad & \sum_{(i, j) \in E}(c_{ij} - \pi_i) w_{ij} \\
+            \text{s.t.} \quad & \sum_{j: (i, j) \in E} w_{ij} - \sum_{j: (j, i) \in E} w_{ji} = 0, \quad \forall i \in C\\
+            & \sum_{j: (0, j) \in E} w_{0j} = 1 \\
+            & \sum_{j: (j, 0) \in E} w_{j0} = 1 \\
+            & \sum_{(i, j) \in E} w_{ij} d_i \le q \\
+            & t_j \ge t_i + d_{ij} - (1 - w_{ij}) M, \quad \forall i \in C, j \in C\\
+            & a_i \le t_i \le b_i, \quad \forall i \in C
+        \end{align*}
+
+        Notice that we would prefer to have the subproblem ``easy to solve''. Although the ESPPTWCC is strongly NP-hard, we can still use efficient (compare to IP) methods such as labeling algorithms to speed up the subproblem solving.
+
+    \section{Early Branching v.s. Branch-and-Price}
+        For MILP problems, the master problem in the Column Generation is an LP relaxation, thus it does not always produce integral solutions (if an integral solution is found, we reach the optimal solution). To derive the optimal solution, in general there are two approaches: early branching heuristic and the Branch-and-Price.
+
+        The early branching heuristic is a two-step approach. In the first step, do CG, until sufficient number of columns/routes are generated (with $y_r \ge 0$). Then, switch the definition of $y_r$s from $\mathbb{R}$ to $\{0, 1\}$, solve the IP. It is called early branching because it branches ``early'' with partial information. The downsides are, first, the subset of the routes might not always create a feasible solution for VRPTW, and second, the heuristic solution might be far away from the optimal solution.
+
+        The other method is to incorporate the classic Branch-and-Bound strategy in the integer solution searching. The general idea is to replace the LP solving Simplex Methods in each iteration with a Column Generation subroutine.
+
+        There are several critical problems/challenges with Branch-and-Price for VRPTW (which is why my professor who taught me B\&P don't like it, but somehow many researchers are fascinated with it... for some reasons). First, due to 0-1 branching, the B\&P will create a \textbf{very} unbalance search tree. Take the following search tree as an example.
+
+        \begin{figure}[h!]
+            \centering
+            \begin{tikzpicture}[scale=0.2]
+                \draw (0, 5) circle [radius=0.5];
+                \draw (-5, 0) circle [radius=0.5];
+                \draw (5, 0) circle [radius=0.5];
+                \draw (0.353, 4.647) -- (4.647, 0.353);
+                \draw (-0.353, 4.647) -- (-4.647, 0.353);
+                \node [left] at (-7, 2.5) {$y_r = 1$};
+                \node [left] at (-5, 0.5) { Fix route $r$ in the solution};
+                \node [left] at (-4, 4.5) { (Huge improvement) };
+                \node [right] at (7, 2.5) {$y_r = 0$};
+                \node [right] at (5, 0.5) { Remove route $r$ from possible solutions};
+                \node [right] at (3, 4.5) { (Very small/No improvement) };
+            \end{tikzpicture}
+        \end{figure}
+
+        The right sub-tree will continue to be searched very inefficiently, due to the unbalance of the tree. The good news is, there are possible improvements to this issue by applying different branching strategies. One of them is the Ryan-Foster Branching Rule, which is designed for the Set Covering Problem. For any fractional solution, there are at least two elements $(i,j)$ so that $i$ and $j$ are both partially covered by the same set $S$, but there is another set $T$ that only covers $i$
+        \begin{figure}[h!]
+            \centering
+            \begin{tikzpicture}[scale=0.2]
+                \draw (0, 5) circle [radius=0.5];
+                \draw (-5, 0) circle [radius=0.5];
+                \draw (5, 0) circle [radius=0.5];
+                \draw (0.353, 4.647) -- (4.647, 0.353);
+                \draw (-0.353, 4.647) -- (-4.647, 0.353);
+                \node [left] at (-7, 2.5) {$(i,j)$ are};
+                \node [left] at (-5, 0.5) { in the same set};
+                \node [left] at (-4, 4.5) {SAME};
+                \node [right] at (7, 2.5) {$(i,j)$ are};
+                \node [right] at (5, 0.5) { in the different set};
+                \node [right] at (3, 4.5) {DIFF};
+            \end{tikzpicture}
+        \end{figure}
+
+        For the search go through the SAME branch, the following constraint will be added into the follow-up subproblems.
+
+        \begin{equation*}
+            \sum_{l: (i, l) \in E} w_{il} = \sum_{l: (j, l \in E)} w_{jl}
+        \end{equation*}
+
+        For the DIFF branch, the corresponded constraints will be
+
+        \begin{equation*}
+            \sum_{l: (i, l) \in E} w_{il} + \sum_{l: (j, l \in E)} w_{jl} \le 1
+        \end{equation*}
+
+        Second, there is a terrible symmetric issue/degeneracy issue in the subproblem - the subproblem will produce duplicate routes. One of the another solutions is for every route r in $y_r = 0$ branches, add the following constraints
+
+        \begin{equation*}
+            \sum_{(i, j) \in E, w_{ij}^r = 0, \forall r \in R^\prime} w_{ij} + \sum_{(i, j) \in E, w_{ij}^r = 1, \forall r \in R'} (1 - w_{ij}) \ge 1
+        \end{equation*}
+
+        The idea is to use the edges that have not yet been used more, and use the edges that have appeared in other edges less. (But it will still be bad...)
+    
+    % \section{Some Accelerating Ideas In General}
+    %     \subsection{For the Master Problem}
+
+    %     \subsection{For the Subproblems/Pricing Problems}
+
+    %     \subsection{}
+
+    % \bibliography{literature}
+\end{document}
