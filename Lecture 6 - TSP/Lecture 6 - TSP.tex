@@ -9,7 +9,7 @@
     \tikzstyle{arrow} = [thick,->,>=stealth]
     \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
 
-\renewcommand{\docTitle}{Lecture Note - Traveling Salesman Problem and The Held-Karp Lower Bound}
+\renewcommand{\docTitle}{Lecture 6 - Traveling Salesman Problem}
 \renewcommand{\docAuthor}{Lan Peng, Ph.D.}
 \renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
 \begin{document}
@@ -30,7 +30,7 @@
             \end{cases}, \quad (i, j) \in A
         \end{equation}
 
-        The objective function will be
+        The objective function is
         \begin{equation}
             \min \quad \sum_{(i, j)\in A} c_{ij}x_{ij}
         \end{equation}
@@ -49,48 +49,6 @@
             \end{equation}
 
             If we list all sub-tour constraints in DFJ, there will be $O(2^n)$ constraints and $O(n^2)$ binary variables. The exponential number of constraints makes it impractical to solve directly. Instead, lazy constraints are usually implemented for the sub-tour elimination constraints (\ref{TSP:con:DFJSubtour1}) or (\ref{TSP:con:DFJSubtour2}).
-
-             In the graph $G=(N, A)$, let $\bar{G}=(N, \bar{A})$ be the connected components of graph, where
-            \begin{equation*}
-                \bar{G}=(G, \bar{A}), \bar{A}=\{(i, j) \in A | \bar{x_{ij}}=1\}
-            \end{equation*}
-            
-            denote
-            
-            \begin{equation*}
-                \bar{FS}(i) = \{(i,j)\in \bar{A}\} 
-            \end{equation*}
-
-            The following algorithm describes an algorithm to find subtours:
-            \begin{algorithm}[h!]
-                \caption{Sub-tour Searching Algorithm}
-                \begin{algorithmic}[1]
-                    \State $K = \emptyset$
-                    \State $d_i = 0, \forall i \in N$
-                    \For {$i\in N$}
-                        \State $C = \emptyset$
-                        \State $Q = \emptyset$
-                        \If {$d_i == 0$}
-                            \State $d_i = 1$
-                            \State $C = C\cup \{i\}$
-                            \State Q.append(i)
-                            \While {$Q\ne \emptyset$}
-                                \State v = Q.pop()
-                                \For {$u \in \bar{FS}(v)$}
-                                    \If {$d_u == 0$}
-                                        \State $d_u = 1$
-                                        \State $C = C \cup \{u\}$
-                                        \State Q.append(u)
-                                    \EndIf
-                                \EndFor
-                            \EndWhile
-                        \EndIf
-                        \State $K=K\cup C$
-                    \EndFor
-                \end{algorithmic}
-            \end{algorithm}
-
-            We can add those sub-tour constraints into the formulation on the fly in a Branch-and-cut manner.
 
         \subsection{Miller-Tucker-Zemlin (MTZ) Formulation}
             We can also formulate TSP using sequential formulations, namely, \textbf{Miller-Tucker-Zemlin (MTZ) formulation}. In the MTZ formulation, the degree constraints (\ref{TSP:con:degree1}) and (\ref{TSP:con:degree2}) are the same as in DFJ formulation.
@@ -234,57 +192,22 @@
             \end{align}
 
             The solution indicates that all decision variables are symmetric in the LP Relaxation, thus, it did not provide any information for branching. In fact, such formulation will search all $O(2^n)$ branches and the lower bound will be difficult to converge.
+
+        \subsection{Numerical Comparisons}
+            The following results are on Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz, 2208 Mhz. with Gurobi version 9.3.0. Using this processor, DFJ, MTZ, multi-commodity flow methods can solve instances up to 70 nodes within 10 minutes. Shortest path formulation can solve to optimality for less than 50 nodes within 10 minutes. QAP has the worse performances, which cannot even solve TSP with 15 nodes to optimality within 10 minutes. Here are several observations
+            \begin{itemize}
+                \item In general DFJ formulation is the best formulation between DFJ, MTZ, multi-commodity flow, shortest path, and QAP formulations. Both plain loop and lazy cut methods can solve instances that we are studying within 1 second. Which is significantly better than others.
+                \item As per run time, we can sort the performance of formulations as following: DFJ (Lazy cut) $<$ DFJ (Plain Loop) $<$ MTZ $<$ multi-commodity flow $<$ shortest path $<$ QAP.
+            \end{itemize}
     
     \section{The Held and Karp Lower Bound}
         In this section, we will solve the Dantzig-Fulkerson-Johnson formulation using Lagrangian Relaxation. Before finally converge, the LR finds an infeasible solution as lower bound. The bound found by this method is also known as Held \& Karp Bound.
         
-        \subsection{Minimum Spanning Tree}
-            We first introduce the concept of minimum spanning tree by an example. A company wants to build a communication network for their offices. For a link between office $v$ and office $w$, there is a cost $c_{vw}$. If an office is connected to another office, then they are connected to with all its neighbors. Company wants to minimize the cost of communication networks.
-
-            \begin{definition}[Spanning Tree]
-                A subgraph T of G is a \textbf{spanning tree} if it is spanning ($V(T)=V(G)$) and it is a tree.
-            \end{definition}
-
-            \begin{definition}[Minimum Spanning Tree]
-                Given a connected graph graph $G$, and a cost $C_e, \forall e\in E$, find a minimum cost spanning tree of $G$
-            \end{definition}
-
-            The follow are two algorithms that finds the minimum spanning tree on given graph $G$.
-
-            \begin{algorithm}
-                \caption{Kroskal's Algorithm, $O(m \log m)$}
-                \begin{algorithmic}
-                    \Require A connected graph
-                    \Ensure A minimum spanning tree
-                    \State Keep a spanning forest $H=(V, F)$ of $G$, with $F=\emptyset$
-                    \While {$|F| < |V| - 1$}
-                        \State add to $F$ a least-cost edge $e\notin F$ such that $H$ remains a forest.
-                    \EndWhile
-                \end{algorithmic}
-            \end{algorithm}
-
-            \begin{algorithm}
-                \caption{Prim's Algorithm, $O(nm)$}
-                \begin{algorithmic}
-                    \Require A connected graph
-                    \Ensure A minimum spanning tree
-                    \State Keep $H = (V(H), T)$ with $V(H) = \{v\}$, where $r\in V(G)$ and $T=\emptyset$
-                    \While {$|V(T)| < |V|$}
-                        \State Add to $T$ a least-cost edge $e \notin T$ such that $H$ remains a tree.
-                    \EndWhile
-                \end{algorithmic}
-            \end{algorithm}
-
-            \begin{itemize}
-                \item Kroskal start with a forest that contains all vertices, Prim start with a tree that only contain one vertex.
-                \item Kroskal cannot guarantee every step it is a tree but can guarantee it is spanning, Prim can guarantee every step it is a tree but cannot guarantee spanning.
-            \end{itemize}
-
         \subsection{1-Tree}
             We first introduce an intuitive lower bound for TSP, which is the Minimum Spanning Tree Lower Bound. As we known, an optimal solution for the TSP is a Hamilton Cycle which enumerated all vertices on the graph. The length of such Hamilton cycle is denoted as $TSP^*$. If we randomly remove one of the edges, e.g., $\{vw\}$, then, the cycle becomes a path, denoted by $TSP - \{vw\}$. In this case, the degree of vertices $v$ and $w$ reduce to 1 while all the other vertices remains the same as 2. By definition, such path $TSP - \{vw\}$ is a spanning tree on graph $G$. Therefore, the minimum spanning tree of graph $G$ defines a lower bound.
 
             \begin{equation*}
-                MST \le spanning tree = TSP - \{vw\} < TSP^*
+                MST \le \text{spanning tree} = TSP - \{vw\} < TSP^*
             \end{equation*}
 
             We can further improve the lower bound by introducing 1-tree. A spanning tree is a tree with no cycle, if the graph has 1 cycle, it is called 1-tree. Notice that a Hamilton Cycle has only 1 cycle, thus, the Hamilton Cycle is an 1-tree as well. Naturally, the length of all edges of any 1-tree is larger than the length of all edges of the minimum spanning tree. The lower bound of TSP is further improved as follows

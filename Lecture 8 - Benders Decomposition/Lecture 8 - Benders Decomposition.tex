@@ -18,6 +18,72 @@
     \begin{center}
         \textit{``Learning from one's mistakes.''}
     \end{center}
+    \section{Benders Decomposition}
+        Benders Decomposition is usually applied for those problems that are easy to solve after fixing some of the variables. The general idea is to divide the problem into a master problem containing all complicated variables and subproblems containing simple variables. For example, given an MILP model as follows
+        \begin{align*}
+            \text{(MILP)} \quad \min \quad & f^\top y + c^\top x \\
+            \text{s.t.} \quad & A y \ge b \\
+            & By + Dx \ge d\\
+            & x \ge 0\\
+            & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+        \end{align*}
+
+        In the formulation, decision variables $x$ are separable, thus, for a given $\bar{y} \in \mathbb{Y}$, a subproblem is defined a follows
+        \begin{align*}
+            \text{(Sub)} \quad \min \quad & f^\top \bar{y} + c^\top x\\
+            \text{s.t.} \quad & B \bar{y} + Dx \ge d\\
+            & x \ge 0
+        \end{align*}
+
+        In which $f^\top \bar{y}$ is a constant for given $\bar{y}$, rewrite (Sub) as follows
+
+        \begin{align*}
+            \text{(Sub)} \quad \eta(\bar{y}) = \min_x \{c^\top x | D x \ge d - B \bar{y}, x \ge 0\}
+        \end{align*}
+
+        Notice that $\bar{y}$ remains in the constraints of (Sub), every time when a new $\bar{y}$ is given, the feasible region changes, which makes it difficult to keep track of the model. To facilitate our analysis, we take the dual of (Sub), which maintains the same feasible region every time when a new $\bar{y}$ is given. The dual of the subproblem is defined as follows
+
+        \begin{align*}
+            \text{(Dual-Sub)} \quad \eta(\bar{y}) = \max_{\pi} \{\pi^\top (d - B\bar{y})| \pi^\top D \le c, \pi \ge 0\}
+        \end{align*}
+
+        Then, the equivalent formulation of the original problem is
+        \begin{align*}
+            \text{(Master)} \quad \min \quad & f^\top y + \eta\\
+            & Ay \ge b\\
+            & \eta \ge \max_\pi \{\pi^\top (d - By) | \pi^\top D \le c, \pi \ge 0\}\\
+            & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+        \end{align*}
+
+        Apply the Minkowski-Weyl Theorem to the (Dual-Sub), the feasible region $\{\pi|\pi^\top D \le c, \pi \ge 0\}$ can be represented by a set of extreme points (e.p.) and a set of extreme directions (e.d.). Thus, let
+
+        \begin{itemize}
+            \item $\pi_e \in V$ be the set of all extreme points, and 
+            \item $\pi_d \in D$ be the set of all extreme directions
+        \end{itemize}
+
+        The original problem can be further rewritten as follows
+        \begin{align*}
+            \text{(Master)} \quad \min \quad & f^\top y + \eta\\
+            & Ay \ge b\\
+            & \eta \ge \pi_e^\top (d - By), \quad \forall \pi_e \in V\\
+            & 0 \ge \pi_d^\top (d - By), \quad \forall \pi_d \in D\\
+            & \eta \ge 0\\
+            & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+        \end{align*}
+
+        In which, $\eta \ge \pi_e^\top (d - By)$ are referred as optimality cuts, and $0 \ge \pi_d^\top (d - By)$ are referred as feasibility cuts. However, the set $V$ and $D$ are exponentially large, it is intractable if we have all feasibility cuts and optimality cuts added into the model. To reduce the computational burden, a Branch-and-Cut scheme algorithm framework is more widely implemented by researchers.
+
+        Define the initial restricted master problem which only contains the integer variables $\mathbf{y}$ as follows
+
+        \begin{align*}
+            \text{(RMP)} \quad \min \quad &f^\top y + \eta\\
+            & Ay \ge b \\
+            & \eta \ge 0 \\
+            & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
+        \end{align*}
+
+        Each iteration, an optimized $\bar{y}$ for the (RMP) will be given to the subproblem, which will create a (or multiple) optimality cut(s) or feasibility cut(s). Those cuts will be added into the model in a lazy manner. Each time when an optimality cut is found and added, the lower bound of the master problem will be lifted, otherwise, if a feasibility cut is found and added, the upper bound will be updated. The iteration terminates when the lower bound meet with the upper bound within an acceptable error.
 
     \section{A Uncapacitated Facilities Location Problem}
         \subsection{Formulation}
@@ -101,7 +167,25 @@
                 & = \min_{\bar{y} \in \mathbb{Y}} \{\sum_{j = 1}^m d_j \bar{y}_j + \max_\mathbf{\pi} \{\sum_{i=1}^n (\lambda_i - \sum_{j = 1}^m \bar{y_j} \pi_{ij})|\lambda_i - \pi_{ij} \le c_{ij}, \lambda_i \ge 0, \pi_{ij} \ge 0 i \in C, j \in F\}\}
             \end{align*}
 
-            Notice that for index $i$, the customer, there is no constraint among them, which is logically to be true since in reality customers are not related to each other. Therefore, the due of subproblem can be further decomposed by $i$, for each $i$,
+            Notice that for index $i$, the customer, there is no constraint among them, which is logically to be true since in reality customers are not related to each other. 
+
+            \begin{alignat*}{5}
+                \text{(Dual-Sub)} \quad v(\hat{\mathbf{y}}) = \max \quad & (\lambda_1 - \sum_{j = 1}^m \hat{y}_j \pi_{1j}) + &&(\lambda_2 - \sum_{j = 1}^m \hat{y}_j \pi_{2j}) + \ldots + &&(\lambda_n - \sum_{j = 1}^m \hat{y}_j \pi_{nj}) + && \sum_{j = 1}^m d_j \hat{y}_j \\
+                \text{s.t.} \quad                & \lambda_1 - \pi_{1j} \le c_{1j}                   &&                                                           &&                                                  && \quad \forall j \in \{1, 2, \ldots, m\}\\
+                                                 &                                                   && \lambda_2 - \pi_{2j} \le c_{2j}                           &&                                                  && \quad \forall j \in \{1, 2, \ldots, m\}\\
+                                                 & \cdots\\
+                                                 &                                                   &&                                                           && \lambda_n - \pi_{nj} \le c_{nj}                  && \quad \forall j \in \{1, 2, \ldots, m\}\\
+                                                 & \lambda_1 \ge 0                                   &&                                                           &&                                                  && \\
+                                                 &                                                   && \lambda_i \ge 0                                           &&                                                  && \\
+                                                 & \cdots\\
+                                                 &                                                   &&                                                           && \lambda_n \ge 0                                  && \\
+                                                 & \pi_{1j} \ge 0                                    &&                                                           &&                                                  && \quad j \in \{1, 2, \ldots, m\}\\
+                                                 &                                                   && \pi_{2j} \ge 0                                            &&                                                  && \quad j \in \{1, 2, \ldots, m\}\\
+                                                 & \cdots\\
+                                                 &                                                   &&                                                           && \pi_{nj} \ge 0                                   && \quad j \in \{1, 2, \ldots, m\}\\
+            \end{alignat*}
+
+            Therefore, the due of subproblem can be further decomposed by $i$, for each $i$,
 
             \begin{align*}
                 \text{(Dual-Sub-$i$)} \quad \eta_i(\bar{\mathbf{y}}) = \max \quad & \lambda_i - \sum_{j = 1}^m \bar{y}_j \pi_{ij}\\
@@ -141,97 +225,117 @@
 
             The iteration continues until no more cut can be added into the master problem and we derive the optimal solutions.
 
-    \section{Benders Decomposition}
-        \subsection{How Benders Decomposition Works?}
-            Benders Decomposition is usually applied for those problems that are easy to solve after fixing some of the variables. The general idea is to divide the problem into a master problem containing all complicated variables and subproblems containing simple variables. For example, given an MILP model as follows
-            \begin{align*}
-                \text{(MILP)} \quad \min \quad & f^\top y + c^\top x \\
-                \text{s.t.} \quad & A y \ge b \\
-                & By + Dx \ge d\\
-                & x \ge 0\\
-                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
-            \end{align*}
+    \section{Pareto-optimality cut}
+        \subsection{Choosing procedure}
+            \begin{definition}[dominance, pareto-optimal]
+                We say cut
+                \begin{equation}
+                    z \ge hy + u^1(b - Dy) \succ z \ge hy + u^2(b - Dy)
+                \end{equation}
+                if
+                \begin{equation}
+                    hy + u^1(b - Dy) \ge hy + u^2(b - Dy), \quad \forall y    
+                \end{equation}
+                with at least one strict inequality. Further, we call a cut \textbf{pareto optimal} if it is not dominated by any other cut.
+            \end{definition}
 
-            In the formulation, decision variables $x$ are separable, thus, for a given $\bar{y} \in \mathbb{Y}$, a subproblem is defined a follows
-            \begin{align*}
-                \text{(Sub)} \quad \min \quad & f^\top \bar{y} + c^\top x\\
-                \text{s.t.} \quad & B \bar{y} + Dx \ge d\\
-                & x \ge 0
-            \end{align*}
+            Notice that a Benders cut is determined by the vector $u$, so we want to find which of the produced multiple solutions to the subproblem are not dominated by others (i.e. which vectors produce pareto optimal cuts).
 
-            In which $f^\top \bar{y}$ is a constant for given $\bar{y}$, rewrite (Sub) as follows
+            Define a \textbf{core point} of $\mathbb{Y}$, $y^0 \in ri(\mathbb{Y}^c)$, which can be any point of the relative interior of convex hull of $\mathbb{Y}$.
 
-            \begin{align*}
-                \text{(Sub)} \quad \eta(\bar{y}) = \min_x \{c^\top x | D x \ge d - B \bar{y}, x \ge 0\}
-            \end{align*}
+            Assume that we have $\hat{y}$, the current solution to the master problem, and $v(\hat{y})$ is the optimal value of the subproblem. To find a pareto optimal cut among the multiple solutions $u$ of the dual of the subproblem $f(\hat{y})$, we solve the following linear program:
 
-            Notice that $\bar{y}$ remains in the constraints of (Sub), every time when a new $\bar{y}$ is given, the feasible region changes, which makes it difficult to keep track of the model. To facilitate our analysis, we take the dual of (Sub), which maintains the same feasible region every time when a new $\bar{y}$ is given. The dual of the subproblem is defined as follows
+            \begin{align}
+                \max \quad & h^Ty^0 + u(b - Dy^0)\\
+                \text{s.t.} \quad & u(b - D\hat{y}) = v(\hat{y}) - h^T\hat{y} \label{cons:pareto1}\\
+                &uA \le c^T \label{cons:pareto2}
+            \end{align}
 
-            \begin{align*}
-                \text{(Dual-Sub)} \quad \eta(\bar{y}) = \max_{\pi} \{\pi^\top (d - B\bar{y})| \pi^\top D \le c, \pi \ge 0\}
-            \end{align*}
+            Constraints (\ref{cons:pareto1}) and (\ref{cons:pareto2}) ensure that we are searching only through alternative optimal solutions for the current subproblem. 
 
-            Then, the equivalent formulation of the original problem is
-            \begin{align*}
-                \text{(Master)} \quad \min \quad & f^\top y + \eta\\
-                & Ay \ge b\\
-                & \eta \ge \max_\pi \{\pi^\top (d - By) | \pi^\top D \le c, \pi \ge 0\}\\
-                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
-            \end{align*}
+            Note that $y^0$ can be any arbitrary core point of $\mathbb{Y}$. In other words, choosing different core point and solving that problem we obtain different pareto optimal cut, among which we cannot tell which one is better.
 
-            Apply the Minkowski-Weyl Theorem to the (Dual-Sub), the feasible region $\{\pi|\pi^\top D \le c, \pi \ge 0\}$ can be represented by a set of extreme points (e.p.) and a set of extreme directions (e.d.). Thus, let
+            Let us see why is that true. Suppose that $y^0$ is a core point of $\mathbb{Y}$ and $U(\hat{y})$ is the set of optimal solutions to the subproblem:
 
-            \begin{itemize}
-                \item $\pi_e \in V$ be the set of all extreme points, and 
-                \item $\pi_d \in D$ be the set of all extreme directions
-            \end{itemize}
+            \begin{equation}
+                \max\{h^T\hat{y} + u(b - D\hat{y})\} \label{cons:sub}
+            \end{equation}
 
-            The original problem can be further rewritten as follows
-            \begin{align*}
-                \text{(Master)} \quad \min \quad & f^\top y + \eta\\
-                & Ay \ge b\\
-                & \eta \ge \pi_e^\top (d - By), \quad \forall \pi_e \in V\\
-                & 0 \ge \pi_d^\top (d - By), \quad \forall \pi_d \in D\\
-                & \eta \ge 0\\
-                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
-            \end{align*}
+            Let $u^0$ solve the problem:
 
-            In which, $\eta \ge \pi_e^\top (d - By)$ are referred as optimality cuts, and $0 \ge \pi_d^\top (d - By)$ are referred as feasibility cuts. However, the set $V$ and $D$ are exponentially large, it is intractable if we have all feasibility cuts and optimality cuts added into the model. To reduce the computational burden, a Branch-and-Cut scheme algorithm framework is more widely implemented by researchers.
+            \begin{equation}
+                \max\{h^Ty^0 + u(b - Dy^0)\} \label{cons:sub0}
+            \end{equation}  
 
-            Define the initial restricted master problem which only contains the integer variables $\mathbf{y}$ as follows
+            Now we can prove by contradiction that $u^0$ is not dominated by any other cut from $U(\hat{y})$. Suppose there exists $\bar{u}$, that dominates $u^0$:
 
-            \begin{align*}
-                \text{(RMP)} \quad \min \quad &f^\top y + \eta\\
-                & Ay \ge b \\
-                & \eta \ge 0 \\
-                & \mathbf{y} \in \mathbb{Y} \subseteq \mathbb{Z}_+
-            \end{align*}
+            \begin{equation}
+                h^Ty + \bar{u}(b - Dy) \ge h^Ty + u^0(b - Dy)\ \ \forall y \in \mathbb{Y} \label{cons:dom}
+            \end{equation}
 
-            Each iteration, an optimized $\bar{y}$ for the (RMP) will be given to the subproblem, which will create a (or multiple) optimality cut(s) or feasibility cut(s). Those cuts will be added into the model in a lazy manner. Each time when an optimality cut is found and added, the lower bound of the master problem will be lifted, otherwise, if a feasibility cut is found and added, the upper bound will be updated. The iteration terminates when the lower bound meet with the upper bound within an acceptable error.
+            taking any point $w$ of the convex hull of $\mathbb{Y}^c$ (which can be represented as a convex combination of a finite number of points from $\mathbb{Y}$) we have:
 
-        \subsection{*Is Benders Decomposition a Good Method? Why?}
-            Every one talks about Benders decomposition, however, not so many people actually use it - due to its slow-convergence reputation. The iterative solution of the master problem - which is an Integer Programming Problem - and the subproblem is the a major bottleneck. In particular, the master problem usually have a messy structure, and to make things worse, each iteration the master problem (or it is actually the restricted master problem) is growing in size as the optimality cuts and feasibility cuts being added into the model.
+            \begin{equation}
+                h^Tw + \bar{u}(b - Dw) \ge h^Tw + u^0(b - Dw)\ \ \forall w \in \mathbb{Y}^c
+            \end{equation}
 
-            Here are some potential ways to improve the run time. For the master problem, try
-            \begin{itemize}
-                \item $\epsilon$-optimality
-                \item Heuristics
-                \item Constraint Programming
-                \item Column generation
-                \item Single search tree
-                \item Cut removal
-                \item Cut selection
-            \end{itemize}
+            note that with $y=\hat{y}$ in \ref{cons:dom}, $\bar{u}$ must be an optimal solution to \ref{cons:sub}. But then from \ref{cons:dom} and (\ref{cons:sub0}) we have:
 
-            For the subproblem, try
-            \begin{itemize}
-                \item Approximation
-                \item Column generation
-                \item Specialized methods
-                \item Re-optimization techniques
-                \item Parallelism
-            \end{itemize}
+            \begin{equation}
+                h^Ty + \bar{u}(b - Dy) = h^Ty + u^0(b - Dy)\ \ \forall y \in \mathbb{Y}
+            \end{equation}
 
+            and since $\bar{u}$ dominated $u^0$, there exists at least one $\bar{y}$ such that:
+
+            \begin{equation}
+                h^T\bar{y} + \bar{u}(b - D\bar{y}) > h^T\bar{y} + u^0(b - D\bar{y})
+            \end{equation}
+
+        \subsection{Pareto Optimal Cuts for Facility Location Problem}
+            Consider the previous facility location problem. If $y$ are fixed, i.e., $y = \hat{y} \in \mathbb{Y}$, the rest of the formulation will become a LP model with $x_{ij}$ as the nonnegative decision variables which can further be separated as a set of subproblems for each $i$, 
+            \begin{alignat*}{2}
+                \text{(Dual-Sub-$i$)} \quad \max \quad & \lambda_i - \sum_{j = i}^m \hat{y}_j \pi_{ij}\\
+                \text{s.t.} \quad & \lambda_i - \pi_{ij} \le c_{ij}                  && \quad \forall j \in \{1, 2, \ldots, m\}\\
+                                  & \lambda_i \ge 0                                  && \\
+                                  & \pi_{ij} \ge 0                                   && \quad j \in \{1, 2, \ldots, m\}\\
+            \end{alignat*}
+
+            and each subproblem can be solved as following
+            \begin{alignat*}{2}
+                &\hat{\lambda}_i = \min \{c_{ij}, j \in \mathbf{O}\} \\
+                &\hat{\pi}_{ij} = 0 &&\quad \text{ if } j \in \mathbf{O} \\
+                &\hat{\pi}_{ij} = \max\{0, \hat{\lambda}_i - c_{ij}\} &&\quad \text{ if } j \in \mathbf{C} \\
+            \end{alignat*}
+
+            then, the optimal objective function for the $i$th separated subproblem is $v_i(\mathbf{\hat{y}}) = \hat{\lambda}_i$. From our previous discussion, for each $i$, we can solve the following problem (Pareto-Sub-$i$) to get (part of) the Pareto-optimal cut $\mathbf{u}_{i} = (\lambda_i, \pi_{i1}, \pi_{i2}, \cdots, \pi_{im})$. (The Pareto-optimal cut is $\mathbf{u} = (\mathbf{u}_1, \mathbf{u}_2, \cdots, \mathbf{u}_n)$)
+
+            \begin{alignat*}{2}
+                \text{(Pareto-Sub-$i$)} \quad \max \quad & \lambda_i - \sum_{j = i}^m y^0_j \pi_{ij}\\
+                \text{s.t.} \quad & \lambda_i - \sum_{j = i}^m \hat{y}_j \pi_{ij} = \hat{\lambda}_i\\
+                                  & \lambda_i - \pi_{ij} \le c_{ij}                  && \quad \forall j \in \{1, 2, \ldots, m\}\\
+                                  & \lambda_i \ge 0                                  && \\
+                                  & \pi_{ij} \ge 0                                   && \quad j \in \{1, 2, \ldots, m\}\\
+            \end{alignat*}
+
+            where, as mentioned, $\mathbf{y}^0 \in ri(\mathbb{Y}^c)$. By observation, this problem can be solved as following. First, replace the objective function with the first equality constraint, then the formulation can be rewritten as
+
+            \begin{alignat*}{2}
+                \text{(Pareto-Sub-$i$)} \quad \max \quad & \hat{\lambda}_i + \sum_{j = i}^m (\hat{y}_j - y_j^0) \pi_{ij}\\
+                \text{s.t.} \quad & \lambda_i - \pi_{ij} \le c_{ij}                  && \quad \forall j \in \{1, 2, \ldots, m\}\\
+                                  & \lambda_i \ge 0                                  && \\
+                                  & \pi_{ij} \ge 0                                   && \quad j \in \{1, 2, \ldots, m\}\\
+            \end{alignat*}
+
+            For those $j \in \mathbf{O}$, $\hat{y}_j = 1$, $\hat{y}_j - y_j^0 > 0$, for those $\pi_{ij}$ we want to maximize them, however, we have $\lambda_i - \hat{\lambda}_i = \sum_{j \in \mathbf{O}} \pi_{ij}$, i.e., summation of all such $\pi_{ij}$ is constrained, to maximize the objective function, we can choose the one where $\hat{y}_j - y_j^0$ is the most.
+
+            For those $j \in \mathbf{C}$, $\hat{y}_j = 0$, $\hat{y}_j - y_j^0 < 0$, for those $\pi_{ij}$ we want to minimize them, therefore $\pi_{ij} = \max \{0, \lambda_i - c_{ij}\}$.
+
+            Therefore, the objective function value will be a function of $\lambda_i$, or $f(\lambda_i)$ as 
+            \begin{equation}
+                f(\lambda_i) = \hat{\lambda}_i + \max_j \{\hat{y}_j - y_j^0\} (\lambda_i - \hat{\lambda}_i) + \sum_{j \in \mathbf{C}} (\hat{y}_j - y_j^0)\max\{0, \lambda_i - c_{ij}\}
+            \end{equation}
+
+            This becomes a piece-wise linear function for $\lambda_i$, we can find the optimal value of $\lambda_i$ easily, and once it is found, $\pi_{ij}$ can be derived by $\max\{0, \lambda_i - c_{ij}\}$, therefore for a given $i$ we can get $\mathbf{u}_{i} = (\lambda_i, \pi_{i1}, \pi_{i2}, \cdots, \pi_{im})$. Repeat this for $n$ times, we can get the Pareto-optimal cut $\mathbf{u}$.
 
     % \bibliography{literature}
 \end{document}

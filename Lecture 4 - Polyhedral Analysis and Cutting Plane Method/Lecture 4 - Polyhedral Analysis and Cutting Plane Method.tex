@@ -178,8 +178,8 @@
                     Second, if $C$ is a subset of $V$, for each vertice in $V \setminus C$, there should be at least one vertice in $C$ that is not linked with it. Therefore for each vertice in $C$ we can find a packing.
                 \end{proof}                    
 
-        \subsection{Knapsack Problem}
-            \paragraph{Knapsack Problem Formulation}
+        \subsection{0-1 Knapsack Problem}
+            \paragraph{0-1 Knapsack Problem Formulation}
                 Consider the knapsack set KNAP
                 \begin{equation*}conv(KNAP)= conv(\{x\in \mathbb{B}^n|\sum_{j\in N}a_jx_j\le b\})\end{equation*}
                 in where
@@ -205,14 +205,13 @@
             \paragraph{Cover and Extended Cover}
                 A set $C\subseteq N$ is a cover if $\sum_{j\in C} a_j > b$, a cover $C$ is minimal cover if
                 \begin{equation*}
-                    C\subseteq N | \sum_{j\in C}a_j>b, \sum_{j\in C\setminus k} a_j < b, \forall k \in C 
+                    C\subseteq N | \sum_{j\in C}a_j > b, \sum_{j\in C\setminus k} a_j \le b, \forall k \in C 
                 \end{equation*}
                 For a cover $C$, we can have the cover inequality
                 \begin{equation*}
                     \sum_{j\in C}x_j \le |C|-1
                 \end{equation*}
-                The inequality is trivial considering the pigeonhole principle.\\
-                $C\subseteq N$ is a minimal cover, then $E(C)$ is defined as following:
+                The inequality is trivial considering the pigeonhole principle. $C\subseteq N$ is a minimal cover, then $E(C)$ is defined as following:
                 \begin{equation*}
                     E(C) = C\cup \{j \in N | a_j \ge a_i, \forall i \in C\}
                 \end{equation*}
@@ -250,52 +249,103 @@
             \paragraph{Inequalities and Facets of conv(KNAP) - Lower Bound and Upper Bound Constraints}
                 \begin{itemize}
                     \item $x_k\ge 0$ is a facet of $conv(KNAP)$
-                    \begin{proof}
-                        $0, e_j, \forall j\in N\setminus k$ are $n$ affinely independent points that satisfied $x_k=0$
-                    \end{proof}
+                        \begin{proof}
+                            $\mathbf{0}, \mathbf{e}_j, \forall j\in N\setminus k$ are $n$ linearly independent vectors that satisfied $x_k = 0$ (thus they are affinely independent), i.e.,
+                            \begin{equation*}
+                                rank(\begin{bmatrix}
+                                    \textbf{e}_1 & \textbf{e}_2 & \cdots & \textbf{e}_{k - 1} & \textbf{0} & \textbf{e}_{k + 1} & \cdots & \textbf{e}_n
+                                \end{bmatrix}) = |N|
+                            \end{equation*}
+                        \end{proof}
+
                     \item $x_k\le 1$ is a facet iff $a_j + a_k \le b, \forall j\in N \setminus k$
-                    \begin{proof}
-                        $e_k, e_j+e_k, \forall j \in N\setminus k$ are $n$ affinely independent points that satisfied $x_k = 1$
-                    \end{proof}
+                        \begin{proof}
+                            $\textbf{e}_k, \textbf{e}_j+\textbf{e}_k, \forall j \in N\setminus k$ are $n$ affinely independent points that satisfied $x_k = 1$, i.e.,
+                            \begin{equation*}
+                                rank(\begin{bmatrix}
+                                    \mathbf{e}_{1, k} & \mathbf{e}_{2, k} & \cdots & \mathbf{e}_{k - 1, k} & \mathbf{e}_k & \mathbf{e}_{k, k + 1} & \cdots & \mathbf{e}_{k, n}
+                                \end{bmatrix}) = |N|
+                            \end{equation*}
+                        \end{proof}
                 \end{itemize}                
 
             \paragraph{Inequalities and Facets of conv(KNAP) - Extended Cover}
-                Order the variables so that $a_1 \ge a_2 \ge \dots \ge a_n$, therefore $a_1 = a_{max}$\\
-                Let $C$ be a cover with $\{j_1, j_2, \dots, j_r\}$ where $j_1 < j_2 < \dots < j_r$ so that $a_{j_1} \ge a_{j_2} \ge \dots \ge a_{j_r}$\\
-                Let $p = \min\{j | j\in N \setminus E(C)\}$\\
-                Then
+                Order the variables so that $a_1 \ge a_2 \ge \dots \ge a_n$, therefore $a_1 = a_{max}$. Let $C$ be a cover with $\{j_1, j_2, \dots, j_r\}$ where $j_1 < j_2 < \dots < j_r$ so that $a_{j_1} \ge a_{j_2} \ge \dots \ge a_{j_r}$, then
                 \begin{equation*}
                     \sum_{j\in E(C)} x_j \le |C| - 1 
                 \end{equation*}
+
                 is a facet of $conv(KNAP)$ if
                 \begin{itemize}               
-                    \item$C = N$\\
-                    \begin{proof}
-                        \begin{equation*}
-                        R_k = C\setminus k, \forall k \in C = N \setminus k, \forall k \in N 
-                    \end{equation*}
-                    have $|N|$ affinely independent vectors
-                    \end{proof}                
-                    \item$E(C) = N$ and $\sum_{j\in C \setminus \{j_1, j_2\}} a_j + a_{max} \le b$\\
-                    \begin{proof}
-                         ($j_1, j_2$ are two heaviest elements in $C$)
-                        \begin{equation*}
-                            S_k = C\setminus \{j_1, j_2\}\cup \{k\}, \forall k\in E(C)\setminus C 
-                        \end{equation*}
-                        $R_k\cup S_k$ have $|C|+|E(C) \setminus C| = |E(C)| = |N|$ affinely independent vectors
-                    \end{proof} 
-                    \item$C = E(C)$ and $\sum_{j\in C \setminus j_1} a_j + a_p \le b$)\\
-                    \begin{proof}
-                        ($j_1$ is the heaviest element in $C$, $k$ is the lightest element outside extended cover)
-                        \begin{equation*}
-                            T_k = C \setminus j_i \cup \{k\}, \forall k\in N\setminus E(C) 
-                        \end{equation*}
-                        $R_k \cup T_k$ have $|N \setminus E(C)| + |E(C)| = |N\setminus C| + |C| = |N|$  affinely independent vectors
-                    \end{proof}
-                    \item$C \subset E(C) \subset N$ and $\sum_{j\in C \setminus \{j_1, j_2\}} a_j + a_{max} \le b$ and $\sum_{j\in C \setminus j_1} a_j + a_p \le b$\\
-                    \begin{proof}
-                        $S_k \cup T_k$ have $|E(C) \setminus C| + |N \setminus E(C)| = |N|$ affinely independent vectors
-                    \end{proof}
+                    \item $C = N$
+                        \begin{proof}
+                            \begin{equation*}
+                                rank(\begin{bmatrix}
+                                    0 & 1 & 1 & \cdots & 1 \\
+                                    1 & 0 & 1 & \cdots & 1 \\
+                                    1 & 1 & 0 & \cdots & 1 \\
+                                    \vdots & \vdots & \vdots & & \vdots\\
+                                    1 & 1 & 1 & \cdots & 0
+                                    \end{bmatrix}) = |N|
+                            \end{equation*}
+                        \end{proof}
+
+                    \item $E(C) = N$ and $\sum_{j\in C \setminus \{j_1, j_2\}} a_j + a_{max} \le b$
+                        \begin{proof}
+                             ($j_1, j_2$ are two heaviest elements in $C$)
+                            \begin{equation*}
+                                rank(\left[\begin{array}{c c c c | c c c}
+                                    0 & 1 & \cdots & 1 & 0 & \cdots & 0 \\
+                                    1 & 0 & \cdots & 1 & 0 & \cdots & 0 \\
+                                    \vdots & \vdots & & \vdots & \vdots & & \vdots\\
+                                    1 & 1 & \cdots & 0 & 1 & \cdots & 1 \\
+                                    \hline
+                                    0 & 0 & \cdots & 0 & 1 & \cdots & 0 \\
+                                    \vdots & \vdots & & \vdots & \vdots & & \vdots\\
+                                    0 & 0 & \cdots & 0 & 0 & \cdots & 1
+                                    \end{array}\right]) = |N|
+                            \end{equation*}
+                            In $|C|$ rows, select $|C| - 1$ decision variables to be 1. In $|N| - |C|$ rows, select all decision variables in $C$ except for the two with largest weight to be 1 and select one decision variable outside $C$ to be 1.
+                        \end{proof} 
+
+                    \item $C = E(C)$ and $\sum_{j\in C \setminus j_1} a_j + a_p \le b$, where $p = \max\{j | j\in N \setminus E(C)\}$
+                        \begin{proof}
+                            ($j_1$ is the heaviest element in $C$, $k$ is the lightest element outside extended cover)
+                            \begin{equation*}
+                                rank(\left[\begin{array}{c c c c | c c c}
+                                    0 & 1 & \cdots & 1 & 0 & \cdots & 0 \\
+                                    1 & 0 & \cdots & 1 & 1 & \cdots & 1 \\
+                                    \vdots & \vdots & & \vdots & \vdots & & \vdots\\
+                                    1 & 1 & \cdots & 0 & 1 & \cdots & 1 \\
+                                    \hline
+                                    0 & 0 & \cdots & 0 & 1 & \cdots & 0 \\
+                                    \vdots & \vdots & & \vdots & \vdots & & \vdots\\
+                                    0 & 0 & \cdots & 0 & 0 & \cdots & 1
+                                    \end{array}\right]) = |N|
+                            \end{equation*}
+                            In $|C|$ rows, select $|C| - 1$ decision variables to be 1. In $|N| - |C|$ rows, select all decision variables in $C$ except for the one with largest weight to be 1 and select one decision variable outside $C$ to be 1.
+                        \end{proof}
+
+                    \item $C \subset E(C) \subset N$ and $\sum_{j\in C \setminus \{j_1, j_2\}} a_j + a_{max} \le b$ and $\sum_{j\in C \setminus j_1} a_j + a_p \le b$
+                        \begin{proof}
+                            \begin{equation*}
+                                rank(\left[\begin{array}{c c c c | c c c | c c c}
+                                    0 & 1 & \cdots & 1 & 0 & \cdots & 0 & 0 & \cdots & 0 \\
+                                    1 & 0 & \cdots & 1 & 0 & \cdots & 0 & 1 & \cdots & 1 \\
+                                    \vdots & \vdots & & \vdots & \vdots & & \vdots & \vdots & & \vdots \\
+                                    1 & 1 & \cdots & 0 & 1 & \cdots & 1 & 1 & \cdots & 1\\
+                                    \hline
+                                    0 & 0 & \cdots & 0 & 1 & \cdots & 0 & 0 & \cdots & 0\\
+                                    \vdots & \vdots & & \vdots & \vdots & & \vdots & \vdots & & \vdots \\
+                                    0 & 0 & \cdots & 0 & 0 & \cdots & 1 & 0 & \cdots & 0 \\
+                                    \hline
+                                    0 & 0 & \cdots & 0 & 0 & \cdots & 0 & 1 & \cdots & 0 \\
+                                    \vdots & \vdots & & \vdots & \vdots & & \vdots & \vdots & & \vdots \\
+                                    0 & 0 & \cdots & 0 & 0 & \cdots & 0 & 0 & \cdots & 1 \\
+                                    \end{array}\right]) = |N|
+                            \end{equation*}
+                            In the first $|C|$ rows, select $|C| - 1$ decision variables to be 1. In the next $|E(C)| - C$ rows, select all decision variables in $C$ except for two with largest coefficient to be 1, select a decision variable that is in $E(C)$ but not in $C$ to be 1. In the last $|N| - |E(C)|$ row, select all decision variables in $C$ except for the one with largest coefficient to be 1, select a decision variable outside $E(C)$ to be 1.
+                        \end{proof}
                 \end{itemize}
 
     \section{Generic Cutting Planes}
@@ -502,8 +552,6 @@
             \end{itemize}
 
         \paragraph{User cuts}
-
-
             \begin{figure}[H]
                 \centering
                 \begin{tikzpicture}[node distance = 2cm]

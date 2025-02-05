@@ -9,7 +9,7 @@
     \tikzstyle{arrow} = [thick,->,>=stealth]
     \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
 
-\renewcommand{\docTitle}{Lecture 7 - Vehicle Routing Problem with Time Windows\\and Column Generation}
+\renewcommand{\docTitle}{Lecture 7 - Column Generation}
 \renewcommand{\docAuthor}{Lan Peng, Ph.D.}
 \renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
 \begin{document}
@@ -20,7 +20,7 @@
     \end{center}
 
     \section{Fundamental Idea of the Column Generation}
-        We first introduce an intuitive approach based on the Revised Simplex Method. Recall the Minkowski-Weyl Theorem (we've learnt in the Benders' Decomposition lecture)
+        We first introduce an intuitive approach based on the Revised Simplex Method. Recall the Minkowski-Weyl Theorem
 
         \begin{theorem}[Minkowski-Weyl Theorem]
             Let $P = \{x \in \mathbb{R}^n | Ax \le b\}$ be a polyhedron with extreme points $V(P) = \{\mathbf{v}_1, \mathbf{v}_2, \cdots, \mathbf{v}_{|V|}\}$ and extreme directions $R(P) = \{\mathbf{r}_1, \mathbf{r}_2, \cdots, \mathbf{r}_{|R|}\}$, then
@@ -197,6 +197,37 @@
     %         \item describe as a structure which we can easily optimize - preferably by a heuristic approach. 
     %         \item can improve the dual bound well (the intersection between the polyhedron of the master problem and the price problem should be as small as possible)
     %     \end{itemize}
+
+    \section{Cutting Stock Problem}
+        There are a stock of rods with length $W$, we need a set of items, $J$, each item $j \in J$ has a length of $w_j$ for $b_j$ copies. The objective is to obtain the demanded number of copies of each item by cutting the minimum possible number of stocks. Assuming there are at most $M$ rods, which is sufficient to satisfy all demands. Let $x_{ij}$ be the number of item $j$ cut from stock $i$, and $y_i$ be binary variables that indicates where stock $i$ is used. The cutting stock problem is then defined as follows
+
+        \begin{align*}
+            \min \quad & z = \sum_{i = 1}^M y_i\\
+            \text{s.t.} \quad & \sum_{i = 1}^M x_{ij} \ge b_j, \quad j \in J\\
+            &\sum_{j \in J} w_j x_{ij} \le W y_i, \quad i \in \{1, 2, \cdots, M\}\\
+            & x_{ij} \in \mathbb{Z}_+^{M \times |J|}, \quad i \in \{1, 2, \cdots, M\}, j \in J Elementary Shortest Path Problem with Time Windows and Capacity Constraints\\
+            & y_i \in \{0, 1\}, \quad i \in \{1, 2, \cdots, M\}
+        \end{align*}
+
+        \subsection{(Restricted) master problem}
+            A cutting pattern is a possible way of cutting a stock, defined by the number of copies of each items obtained from that stock.
+
+            \begin{align*}
+                \min \quad & z = \sum_{q = 1}^Q \lambda_q\\
+                \text{s.t.} \quad & \sum_{q = 1}^Q p_{q} \lambda_q \ge b_j, \quad j \in J \quad (\pi)\\
+                &\lambda_q \in \mathbb{Z}, \quad q = 1, 2, \cdots, Q
+            \end{align*}
+
+            In which, there are exponential number of $\lambda$ variables, one for each cutting pattern, from 1 to $Q$. Let $p_{qj}$ indicate how many copies of item $j$ are obtained in the $q$th cutting pattern.
+
+        \subsection{Pricing subproblem}
+            At each iteration, the following Integer Knapsack Problem is solved
+            \begin{align*}
+                \min \quad &\bar{c} = 1 - \sum_{j \in J} \pi_j x_j\\
+                \text{s.t.} \quad & \sum_{j \in J} w_j x_j \le W\\
+                x_j \in \mathbb{Z}_+^{|J|}, \quad \forall j \in J
+            \end{align*}
+            Each solution of this model is a cutting pattern.
         
     \section{Vehicle Routing Problem with Time Windows}
         Consider a fleet of vehicles $V$, a set of customers $C$, and a directed graph $G = (C\cup\{0\}\cup\{|C| + 1\}, N)$. (0 as the starting depot and $|C| + 1$ as a duplicate of depot for vehicles to return to). The cost of each arc is $c_{ij}$ and the travel time is $t_{ij}$. Each vehicle has a capacity of $q$ and each customer $i$ has a demand of $d_i$. Each customer is associated with a time window $[a_i, b_i]$.
@@ -222,42 +253,41 @@
             & x_{ijk} \in \{0, 1\}, \quad \forall i \in C \cup \{0\} \cup \{|C| + 1\}, k \in V
         \end{align*}
 
-        Now, the question is, who are the ``difficult'' constraints? Notice that there is only one set of coupling constraints ($\sum_{k = 1}^{|V|}\sum_{j = 1}^{|C| + 1} x_{ijk} = 1$), and the remaining constraints are dealing with each vehicle separately. (They all have $\forall k \in V$), therefore, for sure, that coupling constraints should remain in the master problem. There are two different approaches to separate constraints.
+        Now, the question is, who are the ``difficult'' constraints? Notice that there is only one set of coupling constraints ($\sum_{k = 1}^{|V|}\sum_{j = 1}^{|C| + 1} x_{ijk} = 1$), and the remaining constraints are dealing with each vehicle separately. (They all have $\forall k \in V$), therefore, for sure, that coupling constraints should remain in the master problem. One of the approaches to is to keep the coupling constraints in the master problem. 
 
-        \begin{itemize}
-            \item Approach 1: Keep the coupling constraints and capacity constraints ($\sum_{i = 1}^{|C|} d_i \sum_{j = 1}^{|C| + 1} x_{ijk} \le q$) in the master problem. The master problem is a generalized assignment problem, while the sub problem becomes a Shortest Path Problem with Time Windows (SPPTW).
-            \item Approach 2: Keep the coupling constraints in the master problem. The master problem is a set partitioning problem and the subproblem becomes a Shortest Path Problem with Time Windows and Capacity Constraints (SPPTWCC) or more specifically, the Elementary Shortest Path Problem with Time Windows and Capacity Constraints (ESPPTWCC). 
-        \end{itemize}
+        \subsection{(Restricted) Master Problem}
+            The master problem is a set partitioning problem and the subproblem becomes a Shortest Path Problem with Time Windows and Capacity Constraints (SPPTWCC) or more specifically, the Elementary Shortest Path Problem with Time Windows and Capacity Constraints (ESPPTWCC). 
+            
+            The restricted master problem is defined as follows
 
-        For the set partitioning model, the restricted master problem is defined as follows
+            \begin{align*}
+                \text{(RMP)} \quad \min \quad & \sum_{r \in R^\prime} c_r y_r\\
+                \text{s.t.} \quad & \sum_{r \in R^\prime} a_{ir} y_r = 1, \quad \forall i \in C \quad \text{[$\mathbf{\pi}$]}\\
+                & -\sum_{r\in R^\prime} y_r \ge -K  \quad \text{[$\mathbf{\pi}_0$]} \\
+                & y_r \ge 0, \quad \forall r \in R^\prime \quad \text{(exponential number of $r$s)}
+            \end{align*}
 
-        \begin{align*}
-            \text{(RMP)} \quad \min \quad & \sum_{r \in R^\prime} c_r y_r\\
-            \text{s.t.} \quad & \sum_{r \in R^\prime} a_{ir} y_r = 1, \quad \forall i \in C \quad \text{[$\mathbf{\pi}$]}\\
-            & -\sum_{r\in R^\prime} y_r \ge -K  \quad \text{[$\mathbf{\pi}_0$]} \\
-            & y_r \ge 0, \quad \forall r \in R^\prime \quad \text{(exponential number of $r$s)}
-        \end{align*}
+            For each feasible route $r$ (an extreme point), $c_r$ is the length of route $r$, and $a_{ir}$ is the 0-1 parameter that take 1 if vertex $i$ is visited by route $r$. Let $w_{ij}$ be binary variables which takes 1 if the sub-path go direct from vertex $i$ to $j$. Then,
 
-        For each feasible route $r$ (an extreme point), $c_r$ is the length of route $r$, and $a_{ir}$ is the 0-1 parameter that take 1 if vertex $i$ is visited by route $r$. Let $w_{ij}$ be binary variables which takes 1 if the sub-path go direct from vertex $i$ to $j$. Then,
+            \begin{align*}
+                c_r &= \sum_{(i, j) \in E} c_{ij} w_{ij} \\
+                a_{ir} &= \sum_{(i, j) \in E} w_{ij}
+            \end{align*}
 
-        \begin{align*}
-            c_r &= \sum_{(i, j) \in E} c_{ij} w_{ij} \\
-            a_{ir} &= \sum_{(i, j) \in E} w_{ij}
-        \end{align*}
+        \subsection{Pricing subproblem}
+            The pricing subproblem is defined as follows,
 
-        The pricing subproblem is defined as follows,
+            \begin{align*}
+                \text{(PP)} \quad \min \quad & \sum_{(i, j) \in E}(c_{ij} - \pi_i) w_{ij} \\
+                \text{s.t.} \quad & \sum_{j: (i, j) \in E} w_{ij} - \sum_{j: (j, i) \in E} w_{ji} = 0, \quad \forall i \in C\\
+                & \sum_{j: (0, j) \in E} w_{0j} = 1 \\
+                & \sum_{j: (j, 0) \in E} w_{j0} = 1 \\
+                & \sum_{(i, j) \in E} w_{ij} d_i \le q \\
+                & t_j \ge t_i + d_{ij} - (1 - w_{ij}) M, \quad \forall i \in C, j \in C\\
+                & a_i \le t_i \le b_i, \quad \forall i \in C
+            \end{align*}
 
-        \begin{align*}
-            \text{(PP)} \quad \min \quad & \sum_{(i, j) \in E}(c_{ij} - \pi_i) w_{ij} \\
-            \text{s.t.} \quad & \sum_{j: (i, j) \in E} w_{ij} - \sum_{j: (j, i) \in E} w_{ji} = 0, \quad \forall i \in C\\
-            & \sum_{j: (0, j) \in E} w_{0j} = 1 \\
-            & \sum_{j: (j, 0) \in E} w_{j0} = 1 \\
-            & \sum_{(i, j) \in E} w_{ij} d_i \le q \\
-            & t_j \ge t_i + d_{ij} - (1 - w_{ij}) M, \quad \forall i \in C, j \in C\\
-            & a_i \le t_i \le b_i, \quad \forall i \in C
-        \end{align*}
-
-        Notice that we would prefer to have the subproblem ``easy to solve''. Although the ESPPTWCC is strongly NP-hard, we can still use efficient (compare to IP) methods such as labeling algorithms to speed up the subproblem solving.
+            Notice that we would prefer to have the subproblem ``easy to solve''. Although the ESPPTWCC is strongly NP-hard, we can still use efficient (compare to IP) methods such as labeling algorithms to speed up the subproblem solving.
 
     \section{Early Branching v.s. Branch-and-Price}
         For MILP problems, the master problem in the Column Generation is an LP relaxation, thus it does not always produce integral solutions (if an integral solution is found, we reach the optimal solution). To derive the optimal solution, in general there are two approaches: early branching heuristic and the Branch-and-Price.
