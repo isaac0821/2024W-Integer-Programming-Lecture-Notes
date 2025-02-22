@@ -1,0 +1,505 @@
+\include{labTemplate}
+\usepackage{makecell}
+
+\usetikzlibrary{shapes.geometric, arrows}
+    \tikzstyle{startstop} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+    \tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+    \tikzstyle{process} = [rectangle, minimum width=2cm, minimum height=1cm, text centered, draw=black, inner sep=0.1cm]
+    \tikzstyle{decision} = [diamond, minimum width=2cm, minimum height=0cm, text centered, draw=black, inner sep=0cm]
+    \tikzstyle{arrow} = [thick,->,>=stealth]
+    \tikzstyle{branchnode} = [circle, minimum size = 1cm, text centered, draw=black, inner sep=0.1cm]
+
+\renewcommand{\docTitle}{Lecture Note - Heuristic and Metaheuristics}
+\renewcommand{\docAuthor}{Lan Peng, Ph.D.}
+\renewcommand{\docAffil}{School of Management, Shanghai University, Shanghai, China}
+\begin{document}
+    \titleSec
+
+    \begin{center}
+        \textit{``Puzzle.''}
+    \end{center}
+
+    \section{Heuristic-Search Procedures}
+
+        The word ``heuristic'' stands for ``I found it'' in Greek. The heuristic algorithm are the procedures that we use some information available about the problem to
+        \begin{itemize}
+            \item reduce the search space
+            \item or to speed up the search
+            \item but not guarantee to find the optimum.
+        \end{itemize}
+
+        though there are some shortcomings about heuristic, still, we use heuristic because
+        \begin{itemize}
+            \item we need to avoid combinatorial explosion, because we need the solution FAST.
+            \item we don't need the ``optimal'' solution, good approximation will be sufficient.
+            \item The approximations may not be very good in the worst case, but in reality worst cases occur very rarely.
+            \item Trying to understand why a heuristic works/does not work leads to a better understanding of the problem.
+        \end{itemize}
+
+        \subsection{Hill-Climbing: An Irrevocable Strategy}
+            Hill-climbing is a local search algorithm used for optimization problems. It starts with an initial solution and iteratively makes small improvements by selecting a neighboring solution that improves the objective function. The process continues until no better neighboring solutions can be found, often resulting in a local optimum. It is simple and efficient but can get stuck in suboptimal solutions due to its greedy nature.
+
+            The generic algorithm is as follows
+
+            \begin{algorithm}[!htp]
+                \centering
+                \caption{Hill-climbing}
+                \begin{algorithmic}[1]
+                    \State $S \gets$ an initial solution
+                    \While {not \texttt{stopFlag}}
+                        \State $R \gets$ \texttt{Neighbor(S.clone())}
+                        \If {\texttt{OFV($R$)} is better than \texttt{OFV($S$)}}
+                            \State $S \gets R$
+                        \EndIf
+                    \EndWhile
+                    \State \Return $S$
+                \end{algorithmic}
+            \end{algorithm}
+
+            We can make this algorithm a little more aggressive: create $n$ neighbors to a candidate solution all at one time, and then possibly adopt the best one. This modified algorithm is called Steepest Ascent Hill-Climbing , because by sampling all around the original candidate solution and then picking the best, we’re essentially sampling the gradient and marching straight up it.
+
+            The generic algorithm is as follows
+
+            \begin{algorithm}[!htp]
+                \centering
+                \caption{Steep Ascent Hill-climbing}
+                \begin{algorithmic}[1]
+                    \State $n \gets$ number of neighbors
+                    \State $S \gets$ an initial solution
+                    \While {not \texttt{stopFlag}}
+                        \State $R \gets$ \texttt{Neighbor(S.clone())}
+                        \For {$n - 1$ times}
+                            \State $W \gets$ \texttt{Neighbor(S.clone())}
+                            \If {\texttt{OFV($W$)} is better than \texttt{OFV($R$)}}
+                                \State $R \gets W$
+                            \EndIf
+                        \EndFor
+                        \If {\texttt{OFV($R$)} is better than \texttt{OFV($S$)}}
+                            \State $S \gets R$
+                        \EndIf
+                    \EndWhile
+                    \State \Return $S$
+                \end{algorithmic}
+            \end{algorithm}
+
+            There are several weakness of the Hill-climbing algorithm:
+
+            \begin{itemize}
+                \item They usually terminate at solutions that are only locally optimal.
+                \item There is no information as to the amount by which the discovered local optimum deviates from the global optimum, or perhaps even other local optima.
+                \item The optimum that's obtained depends on the initial configuration.
+                \item In general, it is not possible to provide an upper bound for the computation time.
+            \end{itemize}
+
+        \subsection{Uninformed Search}
+            Uninformed search, also known as blind search, refers to a class of search algorithms that do not use any domain-specific knowledge or heuristic information to guide the search process. These algorithms explore the search space systematically without any additional information about the goal or the structure of the problem beyond the problem definition itself.
+
+            \subsubsection{Depth-First and Backtracking: LIFO Search Strategies}
+
+                Depth-First Search (DFS) starts at a selected node (often the root in trees or any node in graphs) and explores as far as possible along each branch before backtracking. 
+
+                DFS uses a stack (either explicitly or through recursion) to keep track of nodes to visit. It is useful for tasks like solving mazes, topological sorting, and detecting cycles in graphs. However, it may not find the shortest path in unweighted graphs and can get stuck in infinite loops in graphs with cycles if not properly managed.
+
+            \subsubsection{Breadth-First: A FIFO Search Strategy}
+
+                Breadth-First Search (BFS) explores all nodes at the present depth level before moving on to nodes at the next depth level.
+
+                BFS is useful for finding the shortest path in unweighted graphs, level-order traversal in trees, and solving puzzles like the shortest path in a maze. It ensures that all nodes at a particular depth are explored before moving deeper, making it effective for shortest-path problems. However, it can be memory-intensive due to the queue storing all nodes at the current depth level.
+
+            \subsubsection{Iterative Deepening Search}
+            
+                Iterative-Deepening Search combines BFS and DFS in an interesting way. IDS starts with a depth limit of 0 and increment it as long as it has not found a goal node. For every depth limit, IDS performs DFS up to the depth limit. This means that, if the current node is at the depth limit, IDS will not generate and add its successors to the frontier — essentially, IDS backtracks when it reaches the depth limit. Every time we increase the depth limit, IDS starts the depth-first search all over again.
+
+                IDS is an interesting hybrid of BFS and DFS. It is similar to DFS since it performs DFS for each depth limit. IDS is similar to BFS since it explores the search graph level by level by increasing the depth limit by one every time.
+
+                For space complexity, IDS performs DFS for every depth limit. Since IDS increases the depth limit by 1 each time, it will terminate at depth $d$, the depth of the shallowest goal node. The maximum length of the current path is $d$ and each node on the path has at most $b$ siblings.
+
+                Thus, the space complexity is $O(bd)$. This is linear in $d$, the depth of the shallowest goal node. The space complexity is similar to DFS.
+
+                In the worst case, IDS will visit all the nodes in the top $d$ levels. Thus, IDS’s time complexity is similar to that of BFS. The number of nodes up to depth $d$ is dominated by the number of nodes at depth $d$, which is $b^d$. Thus, the time complexity is $O(b^d)$. This is exponential in $d$, the depth of the shallowest goal node.
+
+                Some pros about IDS:
+
+                \begin{itemize}
+                    \item Similar to DFS, IDS requires linear space only.
+                    \item Similar to BFS, IDS is complete and is guaranteed to find the shallowest goal node.
+                    \item IDS also has the same time complexity as BFS, although the exact number of nodes visited by IDS is larger than that of BFS.
+                \end{itemize}
+
+        \subsection{Informed Search}
+            Informed search, also known as heuristic search, refers to a class of search algorithms that use problem-specific knowledge or heuristic information to guide the search process. Unlike uninformed search algorithms, which explore the search space blindly, informed search algorithms leverage additional information (such as an estimate of the cost to reach the goal) to make more intelligent decisions about which paths to explore.
+
+            For each node, we define the following notations for current node $n$.
+
+            \begin{itemize}
+                \item $h(n)$ as the estimated cost from the current node $n$ to the destination.
+                \item $g(n)$ as the known (exact) actual cost from the start node to current node $n$
+                \item $f(n) = g(n) + h(n)$ is the heuristic knowledge. Think of $f(n)$ as an estimate of the cost of the cheapest path from the start state to a goal state through the current state $n$.
+            \end{itemize}
+
+            \subsubsection{A* search}
+                A* search explores the most promising next node, whereas depth first search goes as deep as possible in an arbitrary pattern and breadth first search explores all the nodes on one level before moving to the next. A* search uses a heuristic that provides a merit value for each node, whereas depth-first search and breadth-first search do not.
+
+                \begin{algorithm}
+                    \centering
+                    \caption{A* Search}
+                    \begin{algorithmic}[1]
+                    \State Initialize priority queue \texttt{Open} with $s$
+                    \State Initialize set \texttt{Close} as empty
+                    \State Initialize $f(s) = 0$
+                    \While{$\texttt{Open} \neq \emptyset$}
+                        \State $cur \gets$ node in \texttt{Open} with the lowest $f(n)$
+                        \If{$cur == goal$}
+                            \State \Return path found from $s$ to $cur$
+                        \EndIf
+                        \State $\texttt{Open} \gets \texttt{Open}\setminus \{cur\}$
+                        \State $\texttt{Close} \gets \texttt{Close} \cup \{cur\}$
+                        \For{each neighbor $n$ of $cur$}
+                            \If{$n$ not in \texttt{Close}}
+                                \State $g^\prime(n) \gets g(cur) + cost(cur, n)$
+                                \If{$n$ not in \texttt{Open} or $g^\prime(n) < g(n)$}
+                                    \State $g(n) \gets g^\prime(n)$
+                                    \State $f(n) \gets g(n) + h(n)$
+                                    \If{$n$ not in \texttt{Open}}
+                                        \State Add $n$ to \texttt{Open}
+                                    \EndIf
+                                \EndIf
+                            \EndIf
+                        \EndFor
+                    \EndWhile
+                    \end{algorithmic}
+                \end{algorithm}
+
+            \subsubsection{Uniform Cost Search}
+                A special case of the A* search, where $h(n) = 0$, use the cost only. Technically this is not an informed search.
+
+            \subsubsection{Best-first search}
+                Another special case of the A* search, where $g(n) = 0$, use the heuristic only.
+
+    \section{Single-State Metaheuristic Methods}
+        \subsection{Simulated Annealing}
+                Simulated Annealing is a probabilistic optimization technique inspired by the annealing process in metallurgy, where a material is heated and then slowly cooled to reduce defects. SA explores the solution space by accepting worse solutions with a certain probability, allowing it to escape local optima.
+
+                Simulated Annealing varies from Hill-Climbing in its decision of when to replace the original solution $S$ with a newly found neighborhood $R$. Specially, if $R$ is better than $S$, we always replace $S$ with $R$ as usual. But if $R$ is worse than $S$, we may still replace $S$ with $R$ with a certain probability $P(t, R, S)$:
+
+                \begin{equation}
+                    P(t, R, S) = e^{\frac{\texttt{OFV(R)} - \texttt{OFV(S)}}{t}}, t > 0
+                \end{equation}
+
+                The generic algorithm for Simulated Annealing is as follows
+
+                \begin{algorithm}[!htp]
+                    \centering
+                    \caption{Simulated Annealing}
+                    \begin{algorithmic}[1]
+                        \State $t \gets$ initial temperature
+                        \State $S \gets$ initial candidate solution
+                        \State $Best \gets S$
+                        \While {not \texttt{stopFlag}}
+                            \State $R \gets$ \texttt{Neighbor(S.clone())}
+                            \If {\texttt{OFV(R)} better than \texttt{OFV(S)}}
+                                \State $S \gets R$
+                            \ElsIf {\texttt{Rnd()} $< e^{\frac{\texttt{OFV(R)} - \texttt{OFV(S)}}{t}}$}
+                                \State $S \gets R$
+                            \EndIf
+                            \State Decrease $t$
+                            \If {\texttt{OFV(S)} better than \texttt{OFV(Best)}}
+                                \State $Best \gets S$
+                            \EndIf
+                        \EndWhile
+                        \State \Return $Best$
+                    \end{algorithmic}
+                \end{algorithm}
+
+        \subsection{Tabu Search}
+                Tabu Search is a way of using memory in exchange of runtime. It keeps around a history of ``recently'' considered candidate solutions (known as a tabu list) and refuses to return to those candidates until they are sufficiently far in the past. Thus if we wander up a hill, we have no choice but to wander back down the other side because we are not permitted to stay at or return to the top of the hill. The key to Tabu Search is to maintain the tabu list with some maximum length. 
+
+                The generic algorithm for Tabu Search is as follows
+
+                \begin{algorithm}[!htp]
+                    \centering
+                    \caption{Tabu Search}
+                    \begin{algorithmic}[1]
+                        \State $l \gets$ desired maximum tabu list length
+                        \State $n \gets$ number of new neighbor generate from current solution
+                        \State $S \gets$ an initial solution
+                        \State $Best \gets S$
+                        \State $L \gets \{\}$ as a tabu list of length $l$
+                        \State $L.enqueue(S)$
+                        \While {not \texttt{stopFlag}}
+                            \While {$L.length > l$}
+                                \State $L.pop()$
+                            \EndWhile
+                            \State $R \gets$ \texttt{Neighbor(S.clone())}
+                            \For {$n$ times}
+                                \State $W \gets$ \texttt{Neighbor(S.clone())}
+                                \If {$W \notin L$ and \texttt{OFV($W$)} better than \texttt{OFV($R$)} or $R \in L$}
+                                    \State $R \gets W$
+                                \EndIf
+                            \EndFor
+                            \If {$R \notin L$}
+                                \State $S \gets R$
+                                \State $L.enqueue(R)$
+                            \EndIf
+                            \If {\texttt{S} better than \texttt{Best}}
+                                \State $Best \gets S$
+                            \EndIf
+                        \EndWhile
+                        \State \Return $Best$
+                    \end{algorithmic}
+                \end{algorithm}
+
+        \subsection{Iterated Local Search}
+                Iterated Local Search (ILS) tries to search through the space of local optima in a more intelligent fashion: it tries to stochastically hill-climb in the space of local optima. That is, ILS finds a local optimum, then looks for a ``nearby'' local optimum and possibly adopts that one instead, then finds a new ``nearby'' local optimum, and continue. The heuristic here is that you can often find a better local optima near to the current one, and walking from local optimum to local optimum in this way often outperforms just trying new locations entirely random.
+
+                There are two tricks in ILS, first, ILS does not pick a new restart location entirely at random, it maintains a ``home base'' local optimal and selects new restart locations that are near to the ``home base'' but not too close. We want the restart to be far away enough from current home base to wind up in a new local optimum, but not too far to be total random restart.
+
+                Second, when ILS discovers a new local optimum, it decides whether to retain the current ``home base'' local optimum, or to adopt the new local optimum as the ``home base''. There are two extremes on the spectrum, if we always accept the new local optimum no matter what, we are doing a random walk, if we always accept the local optimum when it is better than our current one, we are doing hill-climbing. ILS is something in-between those two extremes.
+
+                The generic algorithm for ILS is as follows
+                \begin{algorithm}[!htp]
+                    \centering
+                    \caption{Iterated Local Search with Random Restarts}
+                    \begin{algorithmic}[1]
+                        \State $T \gets$ possible time intervals
+                        \State $S \gets$ an initial solution
+                        \State Update ``home base'' $H \gets S$
+                        \State $Best \gets S$
+                        \While {not \texttt{stopFlag}}
+                            \State $t \gets$ random time in the near future, sample from $T$
+                            \While {not run out to time $t$}
+                                \State $R \gets$ \texttt{Neighbor(S.clone())}
+                                \If {\texttt{OFV($R$)} better than \texttt{OFV($S$)}}
+                                    \State $S \gets R$
+                                \EndIf
+                                \If {\texttt{OFV($S$)} better than \texttt{OFV($Best$)}}
+                                    \State $Best \gets S$
+                                \EndIf
+                                \State $H \gets$ New ``home base'' according to $S$
+                                \State $S \gets$ \texttt{Perturb($H$)}
+                            \EndWhile
+                        \EndWhile
+                        \State \Return Best
+                    \end{algorithmic}
+                \end{algorithm}
+
+        \subsection{Greedy Randomized Adaptive Search Procedures}
+            The Greedy Randomized Adaptive Search Procedures (GRASP) is a component-oriented method, designed for certain kinds of spaces consist of combinations of components drawn from a typically fixed set. It's the presence of this fixed set that we can take advantage of in a greedy, local fashion by maintaining historical ``quality'' values of individual components rather than complete solutions.
+
+            GRASP is built on the notions of constructing and searching neighbors for feasible solutions, but it does not use any notion of component-level ``historical quality''. The overall algorithm is as follows: we create a feasible solution by constructing from among highest value (lowest cost) components and the do hill-climbing on the solution.
+
+            \begin{algorithm}[!htp]
+                \centering
+                \caption{Greedy Randomized Adaptive Search Procedures (GRASP)}
+                \begin{algorithmic}[1]
+                    \State $C \gets \{C_1, \cdots, C_n\}$ as a set of components
+                    \State $p \gets$ percentage of components to include each iteration
+                    \State $m \gets$ length of time to do hill-climbing
+                    \State $Best \gets $\texttt{None}
+                    \While {not \texttt{stopFlag}}
+                        \State $S \gets \{\}$ as candidate solution
+                        \While {$S$ is not a feasible solution}
+                            \State $C^\prime \gets C_i \in C \setminus S$ which could be added to $S$ without being infeasible
+                            \If {$C^\prime = \emptyset$}
+                                \State $S \gets \{\}$
+                            \Else
+                                \State $C^{\prime\prime} \gets$ the $p\%$ highest value components in $C^\prime$
+                                \State $S \gets S \cup \{$component chosen uniformly at random from $C^{\prime\prime}\}$
+                            \EndIf
+                        \EndWhile
+                        \For {$m$ times}
+                            \State $R \gets$ \texttt{Neighbor(S.clone())}
+                            \Comment $R$ need to remain feasible
+                            \If {\texttt{OFV($R$)} better than \texttt{OFV($S$)}}
+                                \State $S \gets R$
+                            \EndIf
+                        \EndFor
+                        \If {$B == $\texttt{None} or \texttt{OFV($S$)} better than \texttt{OFV($Best$)}}
+                            \State $Best \gets S$
+                        \EndIf
+                    \EndWhile
+                    \State \Return $Best$
+                \end{algorithmic}
+            \end{algorithm}
+
+    \section{Population-based Metaheuristic Methods}
+        \subsection{Evolution Strategies}
+            The family of evolution algorithms are based on a simple procedure for selecting individuals called truncation selection, and only use mutation as neighborhood searching operator. The simplest implementation is the $(\mu, \lambda)$ algorithm. We begin with a population of $\lambda$ number of randomly generated individuals. Each iteration we access the fitness of each individual and remove all but the $\mu$ fittest ones. Each of the $\mu$ fittest individuals get to produce descendants to repopulate the group until the number of individuals recover to $\lambda$ number.
+
+            \begin{algorithm}[!htp]
+                \centering
+                \caption{The $(\mu, \lambda)$ Evolution Strategy}
+                \begin{algorithmic}[1]
+                    \State $\mu \gets$ number of parents selected
+                    \State $\lambda \gets$ number of children generated by the parents
+                    \State $P \gets \{\}$
+                    \While {$P.size < \lambda$}
+                        \State $P \gets P \cup \{$new random individual$\}$
+                    \EndWhile
+                    \State $Best \gets$ the best individual among $P$
+                    \While {not \texttt{stopFlag}}
+                        \For {Each $P_i \in P$}
+                            \If {\texttt{OFV(P$_i$)} better than \texttt{OFV(Best)}}
+                                \State $Best \gets P_i$
+                            \EndIf
+                        \EndFor
+                        \State $Q \gets$ $\mu$ individuals in $P$ whose $OFV()$ are better
+                        \State $P \gets \{\}$\Comment For $(\mu + \lambda)$, change it to $P \gets Q$
+                        \For {Each $Q_i \in Q$}
+                            \For {$\frac{\lambda}{\mu}$ times}
+                                \State $P \gets P \cup \{$ \texttt{Mutate(Q.clone())} $\}$
+                            \EndFor
+                        \EndFor
+                    \EndWhile
+                    \State \Return $Best$
+                \end{algorithmic}
+            \end{algorithm}
+            
+            The $(\mu, \lambda)$ algorithm has three knobs with which we may adjust exploration versus exploitation.
+
+            \begin{itemize}
+                \item The size of $\lambda$. This essentially controls the sample size for each population, and is basically the same thing as the $n$ variable in Steepest-Ascent Hill Climbing With Replacement. At the extreme, as $\lambda$ approaches $\infty$, the algorithm approaches exploration (random search).
+                \item The size of $\mu$. This controls how selective the algorithm is; low values of $\mu$ with respect to $\lambda$ push the algorithm more towards exploitative search as only the best individuals survive.
+                \item The degree to which Mutation is performed. If Mutate has a lot of noise, then new children fall far from the tree and are fairly random regardless of the selectivity of $\mu$
+            \end{itemize}
+
+        \subsection{Genetic Algorithm}
+            The Genetic Algorithm is similar to the $(\mu, \lambda)$ Evolution Strategy in many respects: it iterates through fitness assessment, selection and breeding, and population reassembly. The primary difference is in how selection and breeding take place: whereas Evolution Strategies select all the parents and then create all the children, the Genetic Algorithm little-by-little selects a few parents and generates a few children until enough children have been created.To breed, we begin with an empty population of children. We then select two parents from the original population, copy them, cross them over with one another, and mutate the results. This forms two children, which we then add to the child population. We repeat this process until the child population is entirely filled.
+
+            \begin{algorithm}[!htp]
+                \centering
+                \caption{Genetic Algorithm}
+                \begin{algorithmic}[1]
+                    \State $p \gets$ size of population
+                    \State $P \gets \{\}$
+                    \While {$P.size < p$}
+                        \State $P \gets P \cup \{$new random individual$\}$
+                    \EndWhile
+                    \State $Best \gets$ the best individual among $P$
+                    \While {not \texttt{stopFlag}}
+                        \For {Each $P_i \in P$}
+                            \If {\texttt{OFV(P$_i$)} better than \texttt{OFV(Best)}}
+                                \State $Best \gets P_i$
+                            \EndIf
+                        \EndFor
+                        \State $Q \gets \{\}$
+                        \For {$p / 2$ times}
+                            \State Select a Parent $P_a \gets$ \texttt{Select(P)}
+                            \State Select another parent $P_b \gets$ \texttt{Select(P)}
+                            \State Breed children $C_a, C_b \gets$ \texttt{Crossover(P$_a$, P$_b$)}
+                            \State $Q \gets Q \cup \{C_a, C_b\}$
+                        \EndFor
+                        \State $P \gets Q$
+                    \EndWhile
+                    \State \Return $Best$
+                \end{algorithmic}
+            \end{algorithm}
+
+        \subsection{Particle Swarm Optimization}
+            Particle Swarm Optimization (PSO) is a stochastic optimization technique somewhat similar to evolutionary algorithms but different in an important way. It’s modeled not after evolution per se, but after swarming and flocking behaviors in animals. Unlike other population-based methods, PSO does not resample populations to produce new ones: it has no selection of any kind. Instead, PSO maintains a single static population whose members are Tweaked in response to new discoveries about the space. The method is essentially a form of directed mutation.
+
+            The key differential between the GA and PSO are threefold: 
+            \begin{itemize}
+                \item first, in GA, each individual moves in discrete space, each represents a discrete solution, while in PSO, each particle moves in continue space, the location of each particle represents a continuum option.
+                \item second, in GA, individuals will be removed due to selection, but in PSO, the particles never die since there is no selection
+                \item third, GA improves the population mainly by crossover, however, PSO improves the population by mutation.
+            \end{itemize} 
+
+            \begin{algorithm}[!htp]
+                \centering
+                \caption{Particle Swarm Optimization}
+                \begin{algorithmic}[1]
+                    \State $s \gets$ size of swarm
+                    \State $\alpha \gets$ proportion of velocity to be retained
+                    \State $\beta \gets$ proportion of personal best to be retained
+                    \State $\delta \gets$ proportion of global best to be retained
+                    \State $\epsilon \gets$ jump size of a particle
+                    \State $P \gets \{\}$
+                    \While {$P.size < s$}
+                        \State $P \gets P \cup \{$new random individual $(\mathbf{x}, \mathbf{v})\}$
+                    \EndWhile
+                    \State $Best \gets$ the best individual among $P$
+                    \While {not \texttt{stopFlag}}
+                        \For {Each $P_i \in P$}
+                            \If {\texttt{OFV(P$_i$)} better than \texttt{OFV(Best)}}
+                                \State $Best \gets P_i$
+                            \EndIf
+                        \EndFor
+                        \For {$\mathbf{x_i} \in P$ with velocity $\mathbf{v_i}$}
+                            \State $\mathbf{x^*} \gets$ location of previous best solution
+                            \State $\mathbf{x^+_i} \gets$ location of $i$'s previous best location
+                            \State Update speed $\mathbf{x_i} \gets \mathbf{x_i} + \epsilon (\alpha\mathbf{v_i} + \beta(\mathbf{x}^* - \mathbf{x_i}) + \delta(\mathbf{x^+}_i - \mathbf{x}_i))$
+                        \EndFor
+                    \EndWhile
+                    \State \Return $Best$
+                \end{algorithmic}
+            \end{algorithm}
+
+        \subsection{Ant Colony Optimization}
+            ACO is population-oriented. But there are two different kinds of ``populations'' in ACO. First, there is the set of components that make up a candidate solutions to the problem. In the Knapsack problem, this set would consist of all the blocks. In the TSP, it would consist of all the edges. The set of components never changes: but we will adjust the ``fitness'' (called the pheromone) of the various components in the population as time goes on.
+
+            Each generation we build one or more candidate solutions, called ant trails in ACO parlance, by selecting components one by one based, in part, on their pheromones. This constitutes the second ``population'' in ACO: the collection of trails. Then we assess the fitness of each trail. For each trail, each of the components in that trail is then updated based on that fitness: a bit of the trail’s fitness is rolled into each component’s pheromone.
+
+            \begin{algorithm}[!htp]
+                \centering
+                \caption{Ant Colony Optimization (ACO)}
+                \begin{algorithmic}[1]
+                    \State $C \gets \{C_1, \cdots, C_n\}$ as a set of components
+                    \State $p \gets$ size of population
+                    \State $\mathbf{p} \gets (p_1, p_2, \cdots, p)$ as the pheromones of the components, initially 0
+                    \State $Best \gets$ \texttt{None}
+                    \While {not \texttt{stopFlag}}
+                        \State $P \gets p$ trails built by iteratively selecting components based on pheromones and costs or values
+                        \For {$P_i \in P$}
+                            \State $P_i \gets$ \texttt{HillClimb($P_i$)}
+                            \If {$B == $\texttt{None} or \texttt{OFV($S$)} better than \texttt{OFV($Best$)}}
+                                \State $Best \gets S$
+                            \EndIf
+                        \EndFor
+                        \State Update $\mathbf{p}$ the pheromones for each $P_i \in P$
+                    \EndWhile
+                    \State \Return $Best$
+                \end{algorithmic}
+            \end{algorithm}
+
+    \section{Tuning the evolutionary algorithms}
+        Almost every practical heuristic search algorithm is controlled by some set of parameters. E.g.,
+
+        \begin{itemize}
+            \item Genetic algorithm: population size, cross over rate, mutation rate, runtime limit, etc.
+            \item Tabu search: tabu list length, tabu age, number of neighborhoods, runtime limit, etc.
+            \item Simulated annealing: initial temperature, length staying at a temperature, accept rate, cooling rate, runtime limit, etc.
+            \item $\cdots$
+        \end{itemize}
+
+        These parameters are applied to
+
+        \begin{itemize}
+            \item the representation
+            \item the evaluation function
+            \item the neighborhood searching operators
+            \item the population size
+            \item the stopping criteria
+            \item $\cdots$
+        \end{itemize}
+
+        Since there are too many combinations of deciding the parameters, the trial-and-error method becomes very tedious and time-consuming, we need a theory to guide how to set some of the parameters of evolutionary algorithms.
+
+        In general, there are two types of parameter settings:
+
+        \begin{itemize}
+            \item Parameter tuning: offline parameter search - before the GA is running
+            \begin{itemize}
+                \item Parameter sweep (try everything)
+                \item Meta-GA ontop of GA
+                \item Racing strategy to find best parameters
+            \end{itemize}
+            \item Parameter control: online parameter search - during the GA is running
+            \begin{itemize}
+                \item Deterministic genetic operators
+                \item Adaptive probabilities for mutation and crossover
+                \item Self-adaptive population size
+            \end{itemize}
+        \end{itemize}
+    % \bibliography{literature}
+\end{document}

@@ -171,33 +171,6 @@
             \item $0 \le z_{PP}^* - \pi_0$. STOP, $V \cup R = \emptyset$
         \end{itemize}
 
-    % \section{Stepping toward Integer Programming}
-    %     Although it looks promising, the DW decomposition is not very efficient for LPs. In fact, commercial solvers such as Gurobi does not even offer DW decomposition method for LP. However, the DW decomposition is powerful for IPs.
-
-    %     Consider an IP version of the problem 
-
-    %     \begin{align*}
-    %         (IP) \quad \min \quad & \mathbf{c^\top x}\\
-    %         \text{s.t.} \quad & \mathbf{Ax \ge b} \quad \text{(``difficult'' constraints)}\\
-    %         & \mathbf{Dx \ge d} \quad \text{(``easy'' constraints)} \\
-    %         & \mathbf{x \in \mathbb{Z}_+}
-    %     \end{align*}
-
-    %     using the similar steps in the previous section, the pricing subproblem is reformulated as
-
-    %     \begin{align*}
-    %         \min \quad & (\mathbf{c^\top - \pi^\top A})\mathbf{x} \quad \text{(dual of ``difficult'' constraints)}\\
-    %         \text{s.t.} \quad & \mathbf{Dx \ge d} \quad \text{(``easy'' constraints)}\\
-    %         & \mathbf{x \in \mathbb{Z}_+}
-    %     \end{align*}
-
-    %     Column generation relies on fast computation over $\{x \in \mathbb{Z}^n | \mathbf{Dx \ge d}\}$. So, for choosing $\mathbf{Dx \ge d}$, it should be 
-
-    %     \begin{itemize}
-    %         \item describe as a structure which we can easily optimize - preferably by a heuristic approach. 
-    %         \item can improve the dual bound well (the intersection between the polyhedron of the master problem and the price problem should be as small as possible)
-    %     \end{itemize}
-
     \section{Cutting Stock Problem}
         There are a stock of rods with length $W$, we need a set of items, $J$, each item $j \in J$ has a length of $w_j$ for $b_j$ copies. The objective is to obtain the demanded number of copies of each item by cutting the minimum possible number of stocks. Assuming there are at most $M$ rods, which is sufficient to satisfy all demands. Let $x_{ij}$ be the number of item $j$ cut from stock $i$, and $y_i$ be binary variables that indicates where stock $i$ is used. The cutting stock problem is then defined as follows
 
@@ -353,12 +326,6 @@
 
         The idea is to use the edges that have not yet been used more, and use the edges that have appeared in other edges less. (But it will still be bad...)
     
-    % \section{Some Accelerating Ideas In General}
-    %     \subsection{For the Master Problem}
-
-    %     \subsection{For the Subproblems/Pricing Problems}
-
-    %     \subsection{}
 
     % \bibliography{literature}
 \end{document}

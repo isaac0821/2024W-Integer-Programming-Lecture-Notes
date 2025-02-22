@@ -422,7 +422,7 @@
             \paragraph{Dominance relations}
                 In contrast to lower bounding rules, dominance relations allow subproblems to be pruned if they can be shown to be dominated by some other subproblem. In other words, if subproblem $S_1$ dominates subproblem $S_2$ , this means that for any solution that is a descendant of $S_2$ , there exists a complete solution descending from $S_1$ that is at least as good. 
 
-    \section{*Use Branch-and-Bound to Solve Other Problems}
+    \section{Use Branch-and-Bound to Solve Other Problems}
         \paragraph{Close-enough Traveling Salesman Problem}
             Given a set of vertices $V = \{0, 1, \cdots, n\}$ in a 2-dimensional space with coordinates $(\bar{x}, \bar{y}), i = 0, 1, \cdots, n$. Each vertex $i$ is in the center of a convex region bounded by a circle $D_i$ with radius $r_i$. Assume that $(\bar{x}_i, \bar{y}_i) \neq (\bar{x}_j, \bar{y}_j), \forall i, j \in V, i \neq j$. The problem lies in determining the value of the coordinates of the hitting points $(\bar{x}_i, \bar{y}_i) \in \mathbb{R}^2$ and a sequence $L = (k_0, k_1, \cdots, k_n), k_i \in V$ representing the order in which the vertices are covered, such that the tour over the hitting points forms a Hamiltionian cycle of minimum length and $(\bar{x}_i, \bar{y}_i) \in D_i, i \in V$.
 
